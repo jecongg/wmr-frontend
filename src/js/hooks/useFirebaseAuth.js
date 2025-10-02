@@ -24,7 +24,6 @@ export const useFirebaseAuth = () => {
 
     useEffect(() => {
         if (isSignInWithEmailLink(auth, window.location.href)) {
-            console.log('Email link sign-in detected');
             handleEmailLinkSignIn();
         }
 
@@ -38,13 +37,28 @@ export const useFirebaseAuth = () => {
                 console.error('Redirect result error:', error);
             });
 
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
+                // Check if user is admin by looking in admin collection
+                let userRole = 'user'; // default role
+                
+                try {
+                    const adminQuery = query(collection(db, 'admin'), where('uid', '==', firebaseUser.uid));
+                    const adminSnapshot = await getDocs(adminQuery);
+                    
+                    if (!adminSnapshot.empty) {
+                        userRole = 'admin';
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Could not check admin status:', error);
+                }
+
                 setUser({
                     uid: firebaseUser.uid,
                     email: firebaseUser.email,
                     displayName: firebaseUser.displayName,
                     roles: firebaseUser.roles || [],
+                    role: userRole, // Add role property
                     photoURL: firebaseUser.photoURL
                 });
             } else {
@@ -95,8 +109,6 @@ export const useFirebaseAuth = () => {
                     await Promise.all(deletePromises);
                     
                 } else {
-                    console.log('No existing user document found, creating new one');
-                    
                     await setDoc(userDocRef, {
                         uid: user.uid, 
                         email: user.email,
@@ -195,105 +207,120 @@ export const useFirebaseAuth = () => {
 
             const provider = new GoogleAuthProvider();
             provider.setCustomParameters({ 
-                prompt: "select_account",
-                hd: "gmail.com" 
+                prompt: "select_account"
             });
             
             provider.addScope('email');
             provider.addScope('profile');
-
-            console.log('🚀 Opening Google sign-in popup...');
-            
             let result;
             try {
                 result = await signInWithPopup(auth, provider);
             } catch (popupError) {
                 if (popupError.code === 'auth/popup-blocked') {
-                    console.log('🔄 Popup blocked, trying redirect method...');
                     await signInWithRedirect(auth, provider);
                     return { success: true, message: 'Redirecting to Google...' };
                 }
                 throw popupError;
             }
+
             const userEmail = result.user.email;
             const userUid = result.user.uid;
 
-            const usersQuery = query(collection(db, 'users'), where('email', '==', userEmail));
-            const querySnapshot = await getDocs(usersQuery);
+            const Query = query(collection(db, 'users'), where('email', '==', userEmail));
+            const userSnapshot = await getDocs(Query);
 
-            if (querySnapshot.empty) {
-                return { 
-                    success: false, 
-                    error: 'Email belum terdaftar oleh administrator. Silakan hubungi administrator untuk mendaftarkan email Anda terlebih dahulu.',
-                    code: 'email-not-registered'
+            if (!userSnapshot.empty) {
+                
+                const userDocSnapshot = userSnapshot.docs[0];
+                const userdata = userDocSnapshot.data();
+                const oldDocId = userDocSnapshot.id;
+                
+                
+                const userData = {
+                    ...userdata,
+                    uid: userUid,
+                    displayName: result.user.displayName,
+                    photoURL: result.user.photoURL,
+                    lastLogin: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
                 };
-            }
 
-            const userDocSnapshot = querySnapshot.docs[0];
-            const userData = userDocSnapshot.data();
-            
-            if (userData.active === false) {
-                // await signOut(auth);
-                return { 
-                    success: false, 
-                    error: 'Akun Anda telah dinonaktifkan oleh administrator. Silakan hubungi administrator untuk mengaktifkan kembali akun Anda.',
-                    code: 'account_inactive'
-                };
-            }
-
-            const deletePromise = deleteDoc(doc(db, 'users', userDocSnapshot.id));
-            const setPromise = setDoc(doc(db, 'users', userUid), userData);
-
-            await Promise.all([deletePromise, setPromise]);
-
-            const authData = {
-                uid: userUid,
-                email: userEmail,
-            };
-
-            router.post('/firebase-auth', authData, {
-                onSuccess: () => {
-                    // Backend auth successful, redirect to dashboard
-                    router.visit('/dashboard');
-                },
-                onError: (errors) => {
-                    console.error('❌ Backend auth error:', errors);
-                    return { success: false, error: 'Gagal melakukan autentikasi dengan server' };
+                try {
+                    const deletePromise = deleteDoc(doc(db, 'users', oldDocId));
+                    const setPromise = setDoc(doc(db, 'users', userUid), userData);
+                    console.log(userData)
+                    if(userData.role === "admin"){
+                        setRedirectTarget('/admin');
+                    }else{
+                        setRedirectTarget('/dashboard');
+                    }
+                    await Promise.all([deletePromise, setPromise]);
+                    
+                } catch (firestoreError) {
+                    console.error('❌ Firestore operation failed:', firestoreError);
+                    
+                    if (firestoreError.code === 'permission-denied') {
+                        return {
+                            success: false,
+                            error: 'Tidak memiliki izin untuk mengakses data admin. Pastikan Firestore rules sudah dikonfigurasi dengan benar.',
+                            code: 'permission-denied'
+                        };
+                    }
+                    
+                    throw firestoreError;
                 }
-            });
+                
+                return { 
+                    success: true, 
+                    user: result.user, 
+                    isAdmin: true,
+                    message: 'Login berhasil! Redirect ke Admin Page...' 
+                };
+            }
 
-            return { success: true, user: result.user };
-
-    } catch (error) {
-        console.error('❌ Google sign-in error:', error);
-        
-        let errorMessage = 'Login Google gagal';
-        switch (error.code) {
-            case 'auth/popup-closed-by-user':
-                errorMessage = 'Login dibatalkan oleh pengguna.';
-                break;
-            case 'auth/popup-blocked':
-                errorMessage = 'Popup diblokir oleh browser. Silakan izinkan popup untuk situs ini.';
-                break;
-            case 'auth/cancelled-popup-request':
-                errorMessage = 'Popup login dibatalkan.';
-                break;
-            case 'auth/network-request-failed':
-                errorMessage = 'Gagal terhubung ke internet. Periksa koneksi Anda.';
-                break;
-            default:
-                errorMessage = error.message || 'Login Google gagal';
+        } catch (error) {
+            console.error('❌ Google sign-in error:', error);
+            
+            let errorMessage = 'Login Google gagal';
+            switch (error.code) {
+                case 'auth/popup-closed-by-user':
+                    errorMessage = 'Login dibatalkan oleh pengguna.';
+                    break;
+                case 'auth/popup-blocked':
+                    errorMessage = 'Popup diblokir oleh browser. Silakan izinkan popup untuk situs ini.';
+                    break;
+                case 'auth/cancelled-popup-request':
+                    errorMessage = 'Popup login dibatalkan.';
+                    break;
+                case 'auth/network-request-failed':
+                    errorMessage = 'Gagal terhubung ke internet. Periksa koneksi Anda.';
+                    break;
+                case 'permission-denied':
+                    errorMessage = 'Tidak memiliki izin untuk mengakses database. Pastikan Anda sudah login dan memiliki akses yang sesuai.';
+                    break;
+                case 'unavailable':
+                    errorMessage = 'Layanan Firestore sementara tidak tersedia. Silakan coba lagi dalam beberapa saat.';
+                    break;
+                case 'failed-precondition':
+                    errorMessage = 'Operasi database gagal. Silakan coba lagi.';
+                    break;
+                default:
+                    if (error.message && error.message.includes('Missing or insufficient permissions')) {
+                        errorMessage = 'Tidak memiliki izin yang cukup untuk mengakses data. Pastikan Firestore rules sudah dikonfigurasi dengan benar.';
+                    } else {
+                        errorMessage = error.message || 'Login Google gagal';
+                    }
+            }
+            
+            return { 
+                success: false, 
+                error: errorMessage, 
+                code: error.code
+            };
+        } finally {
+            setLoading(false);
         }
-        
-        return { 
-            success: false, 
-            error: errorMessage, 
-            code: error.code
-        };
-    } finally {
-        setLoading(false);
-    }
-};
+    };
 
     const actionCodeSettings = {
         url: window.location.origin + '/login',
@@ -591,6 +618,7 @@ export const useFirebaseAuth = () => {
     return {
         user,
         authloading,
+        redirectTarget,
         signInWithEmail,
         createUserWithEmail,
         signInWithGoogle,

@@ -2,17 +2,33 @@ rules_version='2'
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Admin collection rules
+    match /admin/{adminId} {
+      // Allow authenticated users to read admin data for login verification
+      allow read: if request.auth != null;
+      // Allow authenticated users to write their own admin document (for UID migration)
+      allow write: if request.auth != null && request.auth.uid == adminId;
+      // Allow creating admin documents (for migration from email-based to UID-based)
+      allow create: if request.auth != null;
+      // Allow deleting old admin documents during migration
+      allow delete: if request.auth != null;
+    }
+    
+    // Users collection rules
+    match /users/{userId} {
+      // Allow authenticated users to read user data for login verification
+      allow read: if request.auth != null;
+      // Allow authenticated users to write their own user document
+      allow write: if request.auth != null && request.auth.uid == userId;
+      // Allow creating user documents
+      allow create: if request.auth != null;
+      // Allow deleting user documents during migration
+      allow delete: if request.auth != null;
+    }
+    
+    // Fallback rule for any other collections (temporary for development)
     match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2025, 10, 26);
+      allow read, write: if request.auth != null && request.time < timestamp.date(2025, 11, 26);
     }
   }
 }
