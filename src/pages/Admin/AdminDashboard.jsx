@@ -12,9 +12,9 @@ export default function AdminDashboard() {
         logout();
     }
 
-    // useEffect(() => {
-    //     console.log(currentUser.username);
-    // })
+    useEffect(() => {
+        console.log(currentUser.username);
+    })
 
     return (
         <>
