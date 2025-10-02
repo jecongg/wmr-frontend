@@ -90,7 +90,7 @@ export default function LoginPage() {
                             <input type="checkbox" className='mt-2 border-1 rounded-md'/>
                             <label htmlFor="" className='pl-2'>Remember Me</label>
                         </div>
-                        <button className='w-full bg-gradient-to-r from-indigo-500 to-pink-500 text-white p-2 rounded-md mt-4 hover:scale-105 duration-300 '>Login</button>
+                        <button className='w-full bg-gradient-to-r from-indigo-500 to-pink-500 text-white p-2 rounded-md mt-4 hover:scale-105 duration-300' onClick={handleSubmit}>Login</button>
                     </form>
                     <div className="mt-6">
                         <div className="relative">
