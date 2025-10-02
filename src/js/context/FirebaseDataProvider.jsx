@@ -3,7 +3,7 @@ import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "../../../firebase";
 
-const FirebaseDataContext = createContext();
+export const FirebaseDataContext = createContext();
 
 export function FirebaseDataProvider({ children }) {
 
@@ -47,9 +47,8 @@ export function FirebaseDataProvider({ children }) {
                         uid: firebaseUser.uid,
                         docId: firebaseUser.uid,
                         email: firebaseUser.email,
-                        displayName: firebaseUser.displayName,
-                        role: firebaseUser.role || 'user',
-                        roles: firebaseUser.roles || [],
+                        username: firebaseUser.username,
+                        role: firebaseUser.role,
                         created_at: new Date(),
                         last_login: new Date(),
                     });
@@ -59,9 +58,8 @@ export function FirebaseDataProvider({ children }) {
                     uid: firebaseUser.uid,
                     docId: firebaseUser.uid,
                     email: firebaseUser.email,
-                    displayName: firebaseUser.displayName,
-                    role: firebaseUser.role || 'user',
-                    roles: firebaseUser.roles || []
+                    username: firebaseUser.username,
+                    role: firebaseUser.role
                 });
             });
 
@@ -97,6 +95,12 @@ export function FirebaseDataProvider({ children }) {
     )
 }
 
-export function useFirebase() {
-    return useContext(FirebaseDataContext);
-}
+// // Hook untuk menggunakan FirebaseDataContext
+// export function useFirebaseData() {
+//     const context = useContext(FirebaseDataContext);
+//     if (context === undefined) {
+//         throw new Error('useFirebaseData must be used within a FirebaseDataProvider');
+//     }
+//     return context;
+// }
+
