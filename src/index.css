@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #FDFBF5; /* Warna default dari brand-light */
+}

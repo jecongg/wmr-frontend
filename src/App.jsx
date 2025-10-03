@@ -1,17 +1,15 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// import './App.css'
 import { BrowserRouter, createBrowserRouter, createRoutesFromElements, Route, RouterProvider, Routes } from "react-router";
 import LoginPage from './pages/Login/LoginPage';
+import LandingPage from './pages/LandingPage';
 
 
 function App() {
-  const [count, setCount] = useState()
 
   const router = createBrowserRouter(
     createRoutesFromElements(
-      <Route index element={<LoginPage />}>
+      <Route index element={<LandingPage />}>
       </Route>
     )
   )
