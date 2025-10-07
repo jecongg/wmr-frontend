@@ -47,23 +47,35 @@ const AnimatedSection = ({ children }) => {
   );
 };
 
-// Komponen Header
-const Header = () => (
-  <header className="bg-white/90 backdrop-blur-sm shadow-sm sticky top-0 z-50"> {/* Menambah backdrop blur agar modern */}
-    <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
-      <div className="text-2xl font-bold text-gray-800 font-poppins">Wisma Musik <span className="text-indigo-600">Rhapsody</span></div>
-      <div className="hidden md:flex space-x-6 font-medium">
-        <a href="#hero" className="text-gray-600 hover:text-indigo-600 transition">Beranda</a>
-        <a href="#about" className="text-gray-600 hover:text-indigo-600 transition">Tentang Kami</a>
-        <a href="#programs" className="text-gray-600 hover:text-indigo-600 transition">Program</a>
-        <a href="#testimonials" className="text-gray-600 hover:text-indigo-600 transition">Testimoni</a>
-      </div>
-      <button className="hidden md:block bg-indigo-600 text-white px-5 py-2 rounded-full hover:bg-indigo-700 transition duration-300 shadow-md hover:shadow-lg font-medium">
-        Daftar Sekarang
-      </button>
-    </nav>
-  </header>
-);
+function Header() { 
+
+  const handleScroll = (event, targetId) => {
+    event.preventDefault(); 
+
+    const targetElement = document.getElementById(targetId);
+
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  return (
+    <header className="bg-white/90 backdrop-blur-sm shadow-sm sticky top-0 z-50"> {/* Menambah backdrop blur agar modern */}
+      <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
+        <div className="text-2xl font-bold text-gray-800 font-poppins">Wisma Musik <span className="text-indigo-600">Rhapsody</span></div>
+        <div className="hidden md:flex space-x-6 font-medium">
+          <a href="#hero" className="text-gray-600 hover:text-indigo-600 transition" onClick={(e) => handleScroll(e, 'hero')} >Beranda</a>
+          <a href="#about" className="text-gray-600 hover:text-indigo-600 transition" onClick={(e) => handleScroll(e, 'about')} >Tentang Kami</a>
+          <a href="#programs" className="text-gray-600 hover:text-indigo-600 transition" onClick={(e) => handleScroll(e, 'programs')} >Program</a>
+          <a href="#testimonials" className="text-gray-600 hover:text-indigo-600 transition" onClick={(e) => handleScroll(e, 'testimonials')} >Testimoni</a>
+        </div>
+        <button className="hidden md:block bg-indigo-600 text-white px-5 py-2 rounded-full hover:bg-indigo-700 transition duration-300 shadow-md hover:shadow-lg font-medium">
+          Daftar Sekarang
+        </button>
+      </nav>
+    </header>
+  )
+};
 
 const HeroSection = () => (
   <section id="hero" className="relative bg-gradient-to-b from-indigo-50 to-white py-28 overflow-hidden">
