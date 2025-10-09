@@ -6,13 +6,14 @@ import {
 } from '@heroicons/react/24/outline';
 
 const TeacherForm = ({ teacher, onSave, onCancel }) => {
+    // State untuk menampung semua data dari field input
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         phone: '',
         instrument: '',
         experience: '',
-        photo: '',
+        photo: '', // Akan menyimpan string base64 dari gambar
         bio: '',
         hourlyRate: '',
         availability: []
@@ -22,9 +23,11 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
 
+    // Daftar instrumen dan hari untuk pilihan di form
     const instruments = ['Piano', 'Guitar', 'Violin', 'Drums', 'Vocal', 'Bass', 'Flute', 'Saxophone'];
     const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 
+    // useEffect untuk mengisi form dengan data jika sedang dalam mode 'edit'
     useEffect(() => {
         if (teacher) {
             setFormData({
@@ -42,122 +45,98 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
         }
     }, [teacher]);
 
+    // Handler untuk setiap perubahan pada input teks, angka, atau select
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
+        // Hapus pesan error jika pengguna mulai mengetik lagi
         if (errors[name]) {
-            setErrors(prev => ({
-                ...prev,
-                [name]: ''
-            }));
+            setErrors(prev => ({ ...prev, [name]: '' }));
         }
     };
 
+    // Handler untuk upload file gambar, dengan validasi ukuran dan tipe
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                setErrors(prev => ({
-                    ...prev,
-                    photo: 'Ukuran file maksimal 5MB'
-                }));
+            if (file.size > 5 * 1024 * 1024) { // Maksimal 5MB
+                setErrors(prev => ({ ...prev, photo: 'Ukuran file maksimal 5MB' }));
                 return;
             }
-
             if (!file.type.startsWith('image/')) {
-                setErrors(prev => ({
-                    ...prev,
-                    photo: 'File harus berupa gambar'
-                }));
+                setErrors(prev => ({ ...prev, photo: 'File harus berupa gambar' }));
                 return;
             }
 
             const reader = new FileReader();
-            reader.onload = (e) => {
-                const result = e.target.result;
-                setPhotoPreview(result);
-                setFormData(prev => ({
-                    ...prev,
-                    photo: result
-                }));
+            reader.onload = (event) => {
+                const base64String = event.target.result;
+                setPhotoPreview(base64String);
+                setFormData(prev => ({ ...prev, photo: base64String }));
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const handleAvailabilityChange = (day, checked) => {
-        setFormData(prev => ({
-            ...prev,
-            availability: checked 
-                ? [...prev.availability, day]
-                : prev.availability.filter(d => d !== day)
-        }));
+    // Handler untuk checkbox ketersediaan hari
+    const handleAvailabilityChange = (day) => {
+        setFormData(prev => {
+            const newAvailability = prev.availability.includes(day)
+                ? prev.availability.filter(d => d !== day)
+                : [...prev.availability, day];
+            return { ...prev, availability: newAvailability };
+        });
     };
 
+    // Fungsi validasi sebelum form di-submit
     const validateForm = () => {
         const newErrors = {};
-
-        if (!formData.name.trim()) {
-            newErrors.name = 'Nama guru wajib diisi';
-        }
-
+        if (!formData.name.trim()) newErrors.name = 'Nama guru wajib diisi';
         if (!formData.email.trim()) {
             newErrors.email = 'Email wajib diisi';
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
             newErrors.email = 'Format email tidak valid';
         }
-
-        if (!formData.phone.trim()) {
-            newErrors.phone = 'Nomor telepon wajib diisi';
-        }
-
-        if (!formData.instrument) {
-            newErrors.instrument = 'Instrumen wajib dipilih';
-        }
-
-        if (!formData.experience.trim()) {
-            newErrors.experience = 'Pengalaman wajib diisi';
-        }
-
+        if (!formData.phone.trim()) newErrors.phone = 'Nomor telepon wajib diisi';
+        if (!formData.instrument) newErrors.instrument = 'Instrumen wajib dipilih';
+        if (!formData.experience.trim()) newErrors.experience = 'Pengalaman wajib diisi';
+        
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
+    // Handler saat tombol 'Simpan' atau 'Update' ditekan
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        if (!validateForm()) {
-            return;
-        }
+        if (!validateForm()) return;
 
         setLoading(true);
         try {
+            // Memanggil fungsi onSave yang di-pass dari parent (TeacherManagement)
             await onSave(formData);
         } catch (error) {
-            console.error('Error saving teacher:', error);
+            // Error handling sudah ada di parent, ini hanya untuk logging di console
+            console.error('Error during form submission:', error);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="p-6 max-w-4xl mx-auto">
+        <div className="p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md">
             <div className="flex items-center mb-6">
                 <button
                     onClick={onCancel}
-                    className="mr-4 p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="mr-4 p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
                 >
                     <ArrowLeftIcon className="w-5 h-5" />
                 </button>
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">
-                        {teacher ? 'Edit Guru' : 'Tambah Guru Baru'}
+                        {teacher ? 'Edit Informasi Guru' : 'Tambah Guru Baru'}
                     </h1>
                     <p className="text-gray-600 mt-1">
-                        {teacher ? 'Perbarui informasi guru' : 'Lengkapi informasi guru baru'}
+                        {teacher ? 'Perbarui detail guru di bawah ini' : 'Lengkapi informasi untuk guru baru'}
                     </p>
                 </div>
             </div>

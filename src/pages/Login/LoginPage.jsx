@@ -1,102 +1,94 @@
-import { useState, useEffect } from 'react';
-import {useForm} from 'react-hook-form'
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useFirebaseAuth } from '../../js/hooks/useFirebaseAuth';
 import Swal from 'sweetalert2';
-import { useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 
 export default function LoginPage() {
-    const {register, handleSubmit, formState: {errors}} = useForm()
-    const navigate = useNavigate();
+    const { register, handleSubmit, formState: { errors } } = useForm();
     const [isLoading, setIsLoading] = useState(false);
-    const [isRedirecting, setIsRedirecting] = useState(false);
-    const { user, signInWithGoogle, redirectTarget, authloading } = useFirebaseAuth();
+    
+    // Kita hanya butuh 'user' untuk redirect, dan 'signInWithGoogle' untuk aksi
+    // 'authloading' juga berguna untuk menampilkan loading awal
+    const { user, signInWithGoogle, authloading } = useFirebaseAuth();
 
-    useEffect(() => {
-        if (user && redirectTarget) {
-            setIsRedirecting(true);
-            console.log(user)
-            const isAdmin = user.role === "admin" || redirectTarget === '/admin';
-            
-            Swal.fire({
-                title: "Login Berhasil!",
-                text: "Selamat, Login Berhasil!",
-                icon: 'success',
-                timer: 2000,
-                showConfirmButton: false,
-                timerProgressBar: true
-            }).then(() => {
-                navigate(redirectTarget, { replace: true });
-            });
+    // --- LOGIKA UTAMA ---
+
+    // 1. Tampilkan loading screen jika status auth awal belum jelas
+    if (authloading) {
+        return (
+            <div className='w-full h-screen flex items-center justify-center bg-gray-100'>
+                <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+            </div>
+        );
+    }
+
+    // 2. Jika user SUDAH login (dari onAuthStateChanged), langsung redirect
+    if (user) {
+        let target = '/'; // Fallback
+        switch (user.role) {
+            case 'admin':
+                target = '/admin';
+                break;
+            case 'teacher':
+                target = '/teacher-dashboard'; // Ganti path jika perlu
+                break;
+            case 'student':
+                target = '/student-dashboard'; // Ganti path jika perlu
+                break;
         }
-    }, [user, redirectTarget, navigate]);
+        return <Navigate to={target} replace />;
+    }
 
-
+    // 3. Fungsi yang dipanggil saat tombol Google di-klik
     const handleGoogleLogin = async () => {
-        if (isLoading || isRedirecting) return;
-        
+        if (isLoading) return;
         setIsLoading(true);
 
-        try {
-            const result = await signInWithGoogle();
-            if (result && !result.success) {
-                const userCancelled = result.code === 'auth/popup-closed-by-user' || 
-                                    result.code === 'auth/cancelled-popup-request';
+        const result = await signInWithGoogle();
 
-                if (!userCancelled) {
-                    let title = 'Login Gagal';
-                    let text = result.error;
-                    
-                    if (result.code === 'email-not-registered') {
-                        title = 'Email Belum Terdaftar';
-                        text = 'Email Anda belum terdaftar. Silakan hubungi administrator untuk mendaftarkan email Anda.';
-                    }
-
-                    Swal.fire({
-                        title: title,
-                        text: text,
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
-                }
-            }
-            
-        } catch (error) {
+        // Jika berhasil, tidak perlu melakukan apa-apa.
+        // onAuthStateChanged akan mendeteksi perubahan dan memicu redirect dari poin #2.
+        // Kita hanya perlu menangani kasus GAGAL.
+        if (result && !result.success && !result.silent) { // 'silent' untuk tidak menampilkan error jika popup ditutup
             Swal.fire({
-                title: 'Error',
-                text: 'Terjadi kesalahan yang tidak terduga. Silakan coba lagi.',
+                title: result.code === 'email-not-registered' ? 'Email Belum Terdaftar' : 'Login Gagal',
+                text: result.error || 'Terjadi kesalahan. Silakan coba lagi.',
                 icon: 'error',
                 confirmButtonText: 'OK'
             });
-        } finally {
-            setIsLoading(false);
         }
+        
+        // Selalu set loading ke false setelah selesai
+        setIsLoading(false);
     };
 
-
+    // 4. Tampilan Halaman Login (jika user null dan tidak loading)
     return (
         <div className='w-full h-screen items-center justify-center flex p-10 bg-gray-300'>
             <div className='w-full max-w-[1000px] p-8 space-y-3 bg-white shadow-lg flex flex-row'>
-                <div className='flex-1 px-12 '>
+                <div className='flex-1 px-12'>
+                    {/* Anda bisa menaruh gambar di sini */}
                     <h1></h1>
                 </div>
                 <div className='flex-1 mx-12 py-12 pl-12'>
                     <p className='font-bold my-1 text-3xl mb-3'>Login</p>
-                    <p className='text-gradientmy-1 mb-6'>Welcome Back! Please Login to your Account</p>    
-                    <form action="" onSubmit={handleSubmit()}>
+                    <p className='text-gray-500 my-1 mb-6'>Selamat Datang! Silakan login ke akun Anda.</p>    
+                    
+                    {/* Form Login Email/Password (saat ini belum fungsional) */}
+                    <form>
                         <div className='flex flex-col space-y-1 mb-2'>
-                            <label htmlFor="" className='text-md'>Email</label>
-                            <input type="text" className='mt-1 p-2 border-1 text-sm rounded-md'/>
+                            <label className='text-md'>Email</label>
+                            <input type="text" className='mt-1 p-2 border rounded-md text-sm' disabled/>
                         </div>
                         <div className='flex flex-col space-y-1 mb-2'>
-                            <label htmlFor="">Password</label>
-                            <input type="text" className='mt-1 p-2 text-sm border-1 rounded-md'/>
+                            <label>Password</label>
+                            <input type="text" className='mt-1 p-2 border rounded-md text-sm' disabled/>
                         </div>
-                        <div className='flex flex-row space-y-1 mb-2'>
-                            <input type="checkbox" className='mt-2 border-1 rounded-md'/>
-                            <label htmlFor="" className='pl-2'>Remember Me</label>
-                        </div>
-                        <button className='w-full bg-gradient-to-r from-indigo-500 to-pink-500 text-white p-2 rounded-md mt-4 hover:scale-101 duration-300' onClick={handleSubmit}>Login</button>
+                        <button disabled className='w-full bg-gray-400 text-white p-2 rounded-md mt-4 cursor-not-allowed'>Login</button>
                     </form>
+
+                    {/* Pembatas "Atau" */}
                     <div className="mt-6">
                         <div className="relative">
                             <div className="absolute inset-0 flex items-center">
@@ -107,20 +99,16 @@ export default function LoginPage() {
                             </div>
                         </div>
 
+                        {/* Tombol Login Google */}
                         <button
                             onClick={handleGoogleLogin}
-                            disabled={isLoading || isRedirecting}
+                            disabled={isLoading}
                             className="hover:scale-101 mt-4 w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                         >
                             {isLoading ? (
                                 <>
                                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent mr-2"></div>
-                                    <span className="truncate">Sedang Login...</span>
-                                </>
-                            ) : isRedirecting ? (
-                                <>
-                                    <div className="animate-pulse h-5 w-5 bg-green-500 rounded-full mr-2"></div>
-                                    <span className="truncate">Mengarahkan...</span>
+                                    <span className="truncate">Memproses...</span>
                                 </>
                             ) : (
                                 <>
@@ -134,10 +122,9 @@ export default function LoginPage() {
                                 </>
                             )}
                         </button>
-
                     </div>
                 </div>
             </div>
         </div>
-    )
+    );
 }
