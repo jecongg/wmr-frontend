@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// PERUBAHAN: Import instance 'api' (axios) yang sudah kita buat
-import api from '../../js/services/api'; 
 import TeacherList from './TeacherList';
 import TeacherForm from './TeacherForm';
 import { 
@@ -17,22 +15,53 @@ const TeacherManagement = () => {
     const [filterInstrument, setFilterInstrument] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // useEffect sekarang memanggil fungsi loadTeachers saat komponen pertama kali dirender
+    // Mock data - replace with actual API calls
     useEffect(() => {
         loadTeachers();
     }, []);
 
-    // PERUBAHAN: Fungsi ini sekarang mengambil data dari backend
     const loadTeachers = async () => {
         setLoading(true);
         try {
-            // Menggunakan 'api' untuk melakukan GET request ke endpoint admin
-            const response = await api.get('/api/admin/teachers');
-            setTeachers(response.data); // Mengisi state dengan data dari server
+            // Mock data - replace with actual API call
+            const mockTeachers = [
+                {
+                    id: 1,
+                    name: 'Sarah Johnson',
+                    email: 'sarah.johnson@email.com',
+                    phone: '08123456789',
+                    instrument: 'Piano',
+                    experience: '5 tahun',
+                    photo: 'https://images.unsplash.com/photo-1494790108755-2616b612b394?w=150&h=150&fit=crop&crop=face',
+                    status: 'active',
+                    joinDate: '2023-01-15'
+                },
+                {
+                    id: 2,
+                    name: 'Michael Chen',
+                    email: 'michael.chen@email.com',
+                    phone: '08234567890',
+                    instrument: 'Guitar',
+                    experience: '8 tahun',
+                    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+                    status: 'active',
+                    joinDate: '2022-09-10'
+                },
+                {
+                    id: 3,
+                    name: 'Emily Rodriguez',
+                    email: 'emily.rodriguez@email.com',
+                    phone: '08345678901',
+                    instrument: 'Violin',
+                    experience: '12 tahun',
+                    photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+                    status: 'active',
+                    joinDate: '2021-06-20'
+                }
+            ];
+            setTeachers(mockTeachers);
         } catch (error) {
             console.error('Error loading teachers:', error);
-            // Anda bisa menambahkan state untuk menampilkan pesan error di UI
-            alert('Gagal memuat data guru dari server.');
         } finally {
             setLoading(false);
         }
@@ -48,14 +77,12 @@ const TeacherManagement = () => {
         setShowForm(true);
     };
 
-    // PERUBAHAN: Fungsi ini sekarang mengirim request DELETE ke backend
     const handleDeleteTeacher = async (teacherId) => {
         if (window.confirm('Apakah Anda yakin ingin menghapus guru ini?')) {
             try {
-                // Mengirim request DELETE ke endpoint dengan ID guru
-                await api.delete(`/api/admin/teachers/${teacherId}`);
-                // Memuat ulang data untuk memastikan daftar selalu sinkron
-                loadTeachers(); 
+                // API call to delete teacher
+                // await deleteTeacher(teacherId);
+                setTeachers(teachers.filter(teacher => teacher.id !== teacherId));
             } catch (error) {
                 console.error('Error deleting teacher:', error);
                 alert('Gagal menghapus guru');
@@ -63,38 +90,40 @@ const TeacherManagement = () => {
         }
     };
 
-    // PERUBAHAN: Logika penyimpanan sekarang terbagi antara mengundang (add) dan memperbarui (edit)
     const handleSaveTeacher = async (teacherData) => {
         try {
             if (editingTeacher) {
-                // Jika sedang mengedit, kirim request PUT untuk memperbarui data
-                await api.put(`/api/admin/teachers/${editingTeacher.id}`, teacherData);
-                alert('Data guru berhasil diperbarui!');
+                // Update existing teacher
+                const updatedTeacher = { ...teacherData, id: editingTeacher.id };
+                setTeachers(teachers.map(teacher => 
+                    teacher.id === editingTeacher.id ? updatedTeacher : teacher
+                ));
             } else {
-                // Jika menambah, kirim request POST untuk mengundang guru baru
-                // Endpoint ini sama dengan yang kita buat untuk mengirim email
-                await api.post('/api/admin/teachers', teacherData);
-                alert('Undangan untuk guru baru berhasil dikirim!');
+                // Add new teacher
+                const newTeacher = { 
+                    ...teacherData, 
+                    id: Date.now(), // Replace with proper ID from backend
+                    joinDate: new Date().toISOString().split('T')[0],
+                    status: 'active'
+                };
+                setTeachers([...teachers, newTeacher]);
             }
             setShowForm(false);
             setEditingTeacher(null);
-            loadTeachers(); // Selalu muat ulang data setelah ada perubahan
         } catch (error) {
             console.error('Error saving teacher:', error);
-            const errorMessage = error.response?.data?.message || 'Gagal menyimpan data guru';
-            alert(`Error: ${errorMessage}`);
+            alert('Gagal menyimpan data guru');
         }
     };
 
-    // Logika filter tidak perlu diubah, karena bekerja di sisi client
     const filteredTeachers = teachers.filter(teacher => {
-        const nameMatch = teacher.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-        const emailMatch = teacher.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-        const instrumentMatch = !filterInstrument || teacher.instrument === filterInstrument;
-        return (nameMatch || emailMatch) && instrumentMatch;
+        const matchesSearch = teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            teacher.email.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesInstrument = !filterInstrument || teacher.instrument === filterInstrument;
+        return matchesSearch && matchesInstrument;
     });
 
-    const instruments = ['Piano', 'Guitar', 'Violin', 'Drums', 'Vocal', 'Bass', 'Flute', 'Saxophone'];
+    const instruments = ['Piano', 'Guitar', 'Violin', 'Drums', 'Vocal', 'Bass'];
 
     if (showForm) {
         return (
