@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
+import api from '../../js/services/api'; // Pastikan Anda punya file konfigurasi axios
 import TeacherList from './TeacherList';
 import TeacherForm from './TeacherForm';
 import { 
@@ -15,61 +17,110 @@ const TeacherManagement = () => {
     const [filterInstrument, setFilterInstrument] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Mock data - replace with actual API calls
+    // Efek ini akan berjalan saat komponen pertama kali dimuat
     useEffect(() => {
         loadTeachers();
     }, []);
 
+    // --- FUNGSI API ---
+
     const loadTeachers = async () => {
         setLoading(true);
         try {
-            // Mock data - replace with actual API call
-            const mockTeachers = [
-                {
-                    id: 1,
-                    name: 'Sarah Johnson',
-                    email: 'sarah.johnson@email.com',
-                    phone: '08123456789',
-                    instrument: 'Piano',
-                    experience: '5 tahun',
-                    photo: 'https://images.unsplash.com/photo-1494790108755-2616b612b394?w=150&h=150&fit=crop&crop=face',
-                    status: 'active',
-                    joinDate: '2023-01-15'
-                },
-                {
-                    id: 2,
-                    name: 'Michael Chen',
-                    email: 'michael.chen@email.com',
-                    phone: '08234567890',
-                    instrument: 'Guitar',
-                    experience: '8 tahun',
-                    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-                    status: 'active',
-                    joinDate: '2022-09-10'
-                },
-                {
-                    id: 3,
-                    name: 'Emily Rodriguez',
-                    email: 'emily.rodriguez@email.com',
-                    phone: '08345678901',
-                    instrument: 'Violin',
-                    experience: '12 tahun',
-                    photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-                    status: 'active',
-                    joinDate: '2021-06-20'
-                }
-            ];
-            setTeachers(mockTeachers);
+            // Ganti mock data dengan panggilan API sesungguhnya
+            const response = await api.get('/api/teachers'); // Asumsi endpoint ini ada
+            setTeachers(response.data);
         } catch (error) {
             console.error('Error loading teachers:', error);
+            Swal.fire('Error', 'Gagal memuat data guru dari server.', 'error');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleAddTeacher = () => {
-        setEditingTeacher(null);
-        setShowForm(true);
+    const handleInviteTeacher = async (teacherData) => {
+        try {
+            // Panggil API untuk mengundang guru
+            const response = await api.post('/api/admin/invite-teacher', teacherData);
+            Swal.fire('Berhasil!', response.data.message, 'success');
+            loadTeachers(); // Muat ulang data untuk menampilkan guru yang baru diundang
+        } catch (error) {
+            console.error('Error inviting teacher:', error);
+            const errorMessage = error.response?.data?.message || 'Gagal mengirim undangan.';
+            Swal.fire('Gagal', errorMessage, 'error');
+        }
+    };
+
+    const handleUpdateTeacher = async (teacherData) => {
+        if (!editingTeacher) return;
+        try {
+            // Panggil API untuk update guru
+            const response = await api.put(`/api/teachers/${editingTeacher.id}`, teacherData);
+            Swal.fire('Berhasil!', 'Data guru telah diperbarui.', 'success');
+            
+            // Tutup form dan muat ulang data
+            setShowForm(false);
+            setEditingTeacher(null);
+            loadTeachers();
+        } catch (error) {
+            console.error('Error updating teacher:', error);
+            const errorMessage = error.response?.data?.message || 'Gagal memperbarui data guru.';
+            Swal.fire('Gagal', errorMessage, 'error');
+        }
+    };
+
+    const handleDeleteTeacher = async (teacherId) => {
+        const result = await Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Data guru yang dihapus tidak dapat dikembalikan!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, hapus!',
+            cancelButtonText: 'Batal'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                // Panggil API untuk menghapus guru
+                await api.delete(`/api/teachers/${teacherId}`);
+                Swal.fire('Dihapus!', 'Data guru telah berhasil dihapus.', 'success');
+                loadTeachers(); // Muat ulang data setelah menghapus
+            } catch (error) {
+                console.error('Error deleting teacher:', error);
+                Swal.fire('Gagal', 'Terjadi kesalahan saat menghapus data guru.', 'error');
+            }
+        }
+    };
+
+    // --- HANDLER UNTUK UI ---
+    
+    const handleOpenInviteForm = () => {
+        Swal.fire({
+            title: 'Undang Guru Baru',
+            html: `
+                <input id="swal-input-name" class="swal2-input" placeholder="Nama Lengkap">
+                <input id="swal-input-email" class="swal2-input" placeholder="Alamat Email">
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Kirim Undangan',
+            cancelButtonText: 'Batal',
+            preConfirm: () => {
+                const name = document.getElementById('swal-input-name').value;
+                const email = document.getElementById('swal-input-email').value;
+                if (!name || !email) {
+                    Swal.showValidationMessage(`Nama dan Email wajib diisi`);
+                    return false;
+                }
+                return { name, email };
+            }
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                handleInviteTeacher(result.value);
+            }
+        });
     };
 
     const handleEditTeacher = (teacher) => {
@@ -77,44 +128,12 @@ const TeacherManagement = () => {
         setShowForm(true);
     };
 
-    const handleDeleteTeacher = async (teacherId) => {
-        if (window.confirm('Apakah Anda yakin ingin menghapus guru ini?')) {
-            try {
-                // API call to delete teacher
-                // await deleteTeacher(teacherId);
-                setTeachers(teachers.filter(teacher => teacher.id !== teacherId));
-            } catch (error) {
-                console.error('Error deleting teacher:', error);
-                alert('Gagal menghapus guru');
-            }
-        }
+    const handleCancelForm = () => {
+        setShowForm(false);
+        setEditingTeacher(null);
     };
 
-    const handleSaveTeacher = async (teacherData) => {
-        try {
-            if (editingTeacher) {
-                // Update existing teacher
-                const updatedTeacher = { ...teacherData, id: editingTeacher.id };
-                setTeachers(teachers.map(teacher => 
-                    teacher.id === editingTeacher.id ? updatedTeacher : teacher
-                ));
-            } else {
-                // Add new teacher
-                const newTeacher = { 
-                    ...teacherData, 
-                    id: Date.now(), // Replace with proper ID from backend
-                    joinDate: new Date().toISOString().split('T')[0],
-                    status: 'active'
-                };
-                setTeachers([...teachers, newTeacher]);
-            }
-            setShowForm(false);
-            setEditingTeacher(null);
-        } catch (error) {
-            console.error('Error saving teacher:', error);
-            alert('Gagal menyimpan data guru');
-        }
-    };
+    // --- LOGIKA FILTER ---
 
     const filteredTeachers = teachers.filter(teacher => {
         const matchesSearch = teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -125,15 +144,14 @@ const TeacherManagement = () => {
 
     const instruments = ['Piano', 'Guitar', 'Violin', 'Drums', 'Vocal', 'Bass'];
 
+    // --- RENDER ---
+
     if (showForm) {
         return (
             <TeacherForm
                 teacher={editingTeacher}
-                onSave={handleSaveTeacher}
-                onCancel={() => {
-                    setShowForm(false);
-                    setEditingTeacher(null);
-                }}
+                onSave={handleUpdateTeacher} // Form hanya untuk update
+                onCancel={handleCancelForm}
             />
         );
     }

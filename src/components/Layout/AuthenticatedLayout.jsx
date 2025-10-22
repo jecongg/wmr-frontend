@@ -1,58 +1,34 @@
-import { FirebaseDataProvider } from "../../js/context/FirebaseDataProvider";
 import { Outlet, Navigate } from 'react-router-dom';
-import { useFirebaseAuth } from "../../js/hooks/useFirebaseAuth";
+import { useSelector } from 'react-redux';
+import { selectUser, selectAuthStatus } from '../../redux/slices/authSlice'; // Sesuaikan path
 
-
-const Container = () => {
-    const { user, authloading } = useFirebaseAuth();
+export default function AuthenticatedLayout() {
+    // Baca status otentikasi langsung dari Redux store
+    const user = useSelector(selectUser);
+    const authStatus = useSelector(selectAuthStatus);
     
-    if (authloading) {
+    // Tampilkan loading spinner saat Firebase sedang memeriksa sesi...
+    if (authStatus === 'loading' || authStatus === 'idle') {
         return (
-            <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
-                height: '100vh',
-                flexDirection: 'column'
-            }}>
-                <div style={{
-                    width: '50px',
-                    height: '50px',
-                    border: '3px solid #f3f3f3',
-                    borderTop: '3px solid #007bff',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                }}></div>
-                <p style={{ marginTop: '20px', color: '#666' }}>Loading...</p>
-                <style>
-                    {`
-                        @keyframes spin {
-                            0% { transform: rotate(0deg); }
-                            100% { transform: rotate(360deg); }
-                        }
-                    `}
-                </style>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                {/* Anda bisa menggunakan komponen spinner yang lebih bagus */}
+                <p>Loading...</p>
             </div>
         );
     }
     
+    // Jika pengecekan selesai dan TIDAK ADA user, tendang ke halaman login
     if (!user) {
         return <Navigate to="/login" replace />;
     }
 
+    // Jika ada user, tampilkan konten halaman yang diproteksi
     return (
         <div>
+            {/* Di sini bisa Anda tambahkan Navbar, Sidebar, dll untuk user yang sudah login */}
             <main>
                 <Outlet />
             </main>
         </div>
-    )
-}
-
-export default function AuthenticatedLayout() {
-    return (
-        <FirebaseDataProvider>
-            <Container />
-        </FirebaseDataProvider>
-    )
+    );
 }

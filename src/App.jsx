@@ -1,51 +1,52 @@
-import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from "react-router-dom"; // Rampingkan import
-import LoginPage from './pages/Login/LoginPage';
-// import AdminDashboard from './pages/Admin/AdminPage'; // Ini duplikat, bisa dihapus
-import LandingPage from './pages/LandingPage'; // Sesuaikan path jika perlu
-// import StudentDashboard from './pages/Student/StudentDashboard'; // Sesuaikan path jika perlu
+import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from "react-router-dom";
+import { Provider } from 'react-redux'; // Import Provider dari react-redux
+import { store } from './redux/store';
+
+// Import Hooks & Layouts
+import { useFirebaseAuth } from "./js/hooks/useFirebaseAuth";
 import PublicLayout from './components/Layout/PublicLayout';
 import AuthenticatedLayout from './components/Layout/AuthenticatedLayout';
-// import { FirebaseDataProvider } from './js/context/FirebaseDataProvider'; // Ini biasanya membungkus RouterProvider, bukan di sini
-import AdminPage from './pages/Admin/AdminPage';
-import RegisterTeacher from './pages/RegisterTeacher'; // Sesuaikan path jika perlu
 
+// Import Pages
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/Login/LoginPage';
+import RegisterTeacher from './pages/RegisterTeacher';
+import AdminPage from './pages/Admin/AdminPage';
+
+// Komponen Wrapper untuk memanggil hook
+const AppWrapper = () => {
+  // Panggil hook di sini! Ini akan membuat listener auth aktif secara global.
+  // Hook ini akan mengisi Redux store di background.
+  useFirebaseAuth();
+  return <RouterProvider router={router} />;
+};
+
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <>
+      {/* Rute Publik: Hanya untuk user yang BELUM login */}
+      <Route element={<PublicLayout />}>
+        <Route index element={<LandingPage />} />
+        <Route path='/login' element={<LoginPage />} />
+        <Route path='/register-teacher' element={<RegisterTeacher />} />
+      </Route>
+
+      {/* Rute Terproteksi: Hanya untuk user yang SUDAH login */}
+      <Route element={<AuthenticatedLayout />}>
+        <Route path='/admin' element={<AdminPage />} />
+        {/* <Route path='/student' element={<StudentDashboard/>}/> */}
+      </Route>
+    </>
+  )
+);
 
 function App() {
-
-  const router = createBrowserRouter(
-    createRoutesFromElements(
-      <>
-        {/* Rute-rute ini dapat diakses oleh siapa saja (tidak perlu login) */}
-        <Route element={<PublicLayout />}>
-          <Route index element={<LandingPage />}/>
-          <Route path='/login' element={<LoginPage />}/>
-          
-          {/* --- TAMBAHKAN ROUTE BARU DI SINI --- */}
-          {/* Ini adalah halaman yang akan diakses guru dari link di email */}
-          <Route path='/register-teacher' element={<RegisterTeacher />} />
-
-        </Route>
-
-        {/* Rute-rute ini hanya bisa diakses setelah login */}
-        <Route element={<AuthenticatedLayout />}>
-          <Route path='/admin' element={<AdminPage/>} />
-          {/* Rute untuk murid, jika diperlukan nanti */}
-          {/* <Route path='/student' element={<StudentDashboard/>}/> */}
-        </Route>
-      </>
-    )
-  )
-
   return (
-    // Jika Anda menggunakan context, biasanya diletakkan di sini,
-    // membungkus RouterProvider agar semua route bisa mengakses context.
-    // <FirebaseDataProvider>
-    //   <RouterProvider router={router} />
-    // </FirebaseDataProvider>
-    
-    // Jika tidak, ini sudah benar
-    <RouterProvider router={router} />
-  )
+    // Sediakan Redux store untuk seluruh aplikasi
+    <Provider store={store}>
+      <AppWrapper />
+    </Provider>
+  );
 }
 
 export default App;

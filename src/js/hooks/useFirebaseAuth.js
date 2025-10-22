@@ -1,24 +1,31 @@
-import { useState, useEffect } from "react";
-import {
-    signInWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged,
-    GoogleAuthProvider,
-    signInWithPopup,
-} from "firebase/auth";
-import { auth } from "../../../firebase"; // Pastikan path ini benar
-import api from "../services/api"; // Pastikan path ini benar
+import { useEffect } from "react";
+import { signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth } from "../../../firebase"; 
+import api from "../services/api"; 
+
+// Import Redux tools
+import { useDispatch } from 'react-redux';
+import { setUser, clearAuth, setAuthLoading } from '../../redux/slices/authSlice'; // Sesuaikan path
+import { store } from '../../redux/store'; // <-- [KUNCI 1] Import 'store' secara langsung
 
 export const useFirebaseAuth = () => {
-    const [user, setUser] = useState(null);
-    const [authloading, setLoading] = useState(true); // Mulai dengan true
+    const dispatch = useDispatch();
 
-    // useEffect ini akan menjadi SATU-SATUNYA sumber kebenaran untuk status user
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            
+            // [KUNCI 2] Tambahkan "Gerbang Penjaga" (Guard Clause)
+            // Ambil status Redux saat ini SECARA LANGSUNG dari store.
+            const { status } = store.getState().auth;
+
+            // Jika kita sudah loading atau sudah berhasil, jangan lakukan apa-apa.
+            // Ini akan memutus infinite loop.
+            if (status === 'loading' || status === 'succeeded') {
+                return;
+            }
+
             if (firebaseUser) {
-                // Saat Firebase bilang ada user, kita validasi ke backend
-                // Ini akan berjalan saat pertama kali load DAN setelah signInWithGoogle berhasil
+                dispatch(setAuthLoading());
                 try {
                     const response = await api.post('/api/auth/google-login', {
                         uid: firebaseUser.uid,
@@ -26,51 +33,40 @@ export const useFirebaseAuth = () => {
                     });
 
                     if (response.data.success) {
-                        const completeUserData = { 
-                            ...firebaseUser,
-                            ...response.data.user
-                        };
-                        setUser(completeUserData);
+                        dispatch(setUser(response.data.user)); 
                     } else {
-                        // Jika backend menolak (misal: email tidak terdaftar), logout dari Firebase
                         await signOut(auth);
-                        setUser(null);
+                        dispatch(clearAuth());
                     }
                 } catch (error) {
-                    console.error("Gagal memvalidasi user ke backend:", error);
+                    console.error("Gagal validasi user ke backend:", error);
                     await signOut(auth);
-                    setUser(null);
+                    dispatch(clearAuth());
                 }
             } else {
-                // Jika Firebase bilang tidak ada user, kita set null
-                setUser(null);
+                // Jika tidak ada user, panggil clearAuth.
+                // Ini akan mengubah status menjadi 'failed', yang akan menghentikan loading.
+                dispatch(clearAuth());
             }
-            setLoading(false); // Selesai loading setelah semua pengecekan selesai
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [dispatch]); // Dependency array sudah benar
 
     const signInWithGoogle = async () => {
-        // Fungsi ini sekarang menjadi SANGAT sederhana
-        // Tugasnya hanya memicu popup login Firebase.
-        // Sisanya akan ditangani oleh onAuthStateChanged di atas.
         try {
             const provider = new GoogleAuthProvider();
             await signInWithPopup(auth, provider);
-            // Tidak perlu melakukan apa-apa lagi di sini!
             return { success: true };
         } catch (error) {
-            // ... (logika penanganan error popup, misal ditutup pengguna) ...
             return { success: false, code: error.code, error: error.message };
         }
     };
     
     const logout = async () => {
         await signOut(auth);
-        setUser(null);
+        dispatch(clearAuth());
     };
-
-    // Kita tidak perlu lagi redirectTarget di sini
-    return { user, authloading, signInWithGoogle, logout };
+    
+    return { signInWithGoogle, logout }; 
 };
