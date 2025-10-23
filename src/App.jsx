@@ -49,8 +49,9 @@ const router = createBrowserRouter(
       </Route>
 
       {/* Rute khusus Murid */}
-      <Route element={<ProtectedRoute allowedRoles={['student']} />}>
-        {/* <Route path='/student/dashboard' element={<StudentDashboard />} /> */}
+      <Route >
+        {/* element={<ProtectedRoute allowedRoles={['student']} />} */}
+        <Route path='/student/dashboard' element={<StudentDashboard />} />
       </Route>
     </>
   )
