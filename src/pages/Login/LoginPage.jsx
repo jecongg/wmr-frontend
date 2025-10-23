@@ -13,7 +13,7 @@ export default function LoginPage() {
 
     const user = useSelector(selectUser);
     const redirectTarget = useSelector(selectRedirectTarget);
-    const { signInWithGoogle } = useFirebaseAuth();
+    const { signInWithGoogle, signInWithEmail } = useFirebaseAuth();
 
     useEffect(() => {
         // Efek ini sekarang aman. Hanya akan berjalan setelah klik login berhasil.
@@ -29,6 +29,37 @@ export default function LoginPage() {
             });
         }
     }, [user, redirectTarget, navigate]);
+
+    const handleEmailLogin = async (data) => {
+        if (isLoading) return;
+        setIsLoading(true);
+        try {
+            const result = await signInWithEmail(data.email, data.password);
+            
+            // Jika Firebase menolak login, tampilkan pesan error yang sesuai
+            if (!result.success) {
+                let errorMessage = 'Terjadi kesalahan. Silakan coba lagi.';
+                switch (result.code) {
+                    case 'auth/user-not-found':
+                    case 'auth/invalid-email':
+                        errorMessage = 'Email tidak terdaftar di sistem kami.';
+                        break;
+                    case 'auth/wrong-password':
+                    case 'auth/invalid-credential':
+                        errorMessage = 'Password yang Anda masukkan salah.';
+                        break;
+                    default:
+                        errorMessage = 'Gagal login. Periksa kembali email dan password Anda.';
+                }
+                Swal.fire('Login Gagal', errorMessage, 'error');
+            }
+            // Jika berhasil, useEffect di atas akan menangani redirect
+        } catch (error) {
+            Swal.fire('Error', 'Terjadi kesalahan yang tidak terduga.', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleGoogleLogin = async () => {
         if (isLoading) return;
@@ -51,7 +82,7 @@ export default function LoginPage() {
                 <div className='flex-1 mx-12 py-12 pl-12'>
                     <p className='font-bold my-1 text-3xl mb-3'>Login</p>
                     <p className='text-gray-500 my-1 mb-6'>Welcome Back! Please Login to your Account</p>
-                    <form action="" onSubmit={handleSubmit(() => {})}>
+                    <form onSubmit={handleSubmit(handleEmailLogin)}>
                         <div className='flex flex-col space-y-1 mb-2'>
                             <label htmlFor="email" className='text-md'>Email</label>
                             <input id="email" type="text" className='mt-1 p-2 border text-sm rounded-md' {...register("email")} />

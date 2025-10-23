@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../../firebase"; 
 import api from "../services/api"; 
 
@@ -62,11 +62,26 @@ export const useFirebaseAuth = () => {
             return { success: false, code: error.code, error: error.message };
         }
     };
+
+    const signInWithEmail = async (email, password) => {
+        try {
+            // Panggil Firebase untuk melakukan login
+            await signInWithEmailAndPassword(auth, email, password);
+
+            // Jika berhasil, onAuthStateChanged akan otomatis terpicu.
+            // Kita tidak perlu melakukan apa-apa lagi di sini.
+            return { success: true };
+        } catch (error) {
+            // Jika gagal, kembalikan kode error agar bisa ditangani di UI
+            console.error("Email Sign-In Error:", error.code);
+            return { success: false, code: error.code };
+        }
+    };
     
     const logout = async () => {
         await signOut(auth);
         dispatch(clearAuth());
     };
     
-    return { signInWithGoogle, logout }; 
+    return { signInWithGoogle, signInWithEmail, logout }; 
 };

@@ -1,22 +1,20 @@
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from "react-router-dom";
-import { Provider } from 'react-redux'; // Import Provider dari react-redux
+import { Provider } from 'react-redux';
 import { store } from './redux/store';
 
-// Import Hooks & Layouts
+// Import Hooks & Layouts/Routes
 import { useFirebaseAuth } from "./js/hooks/useFirebaseAuth";
-import PublicLayout from './components/Layout/PublicLayout';
-import AuthenticatedLayout from './components/Layout/AuthenticatedLayout';
+import ProtectedRoute from './components/Layout/ProtectedRoute'; // Layout baru kita
+import GuestRoute from './components/Layout/GuestRoute';       // Layout baru kita
 
 // Import Pages
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/Login/LoginPage';
 import RegisterTeacher from './pages/RegisterTeacher';
 import AdminPage from './pages/Admin/AdminPage';
+// import TeacherDashboard from './pages/Teacher/TeacherDashboard'; // Contoh halaman dashboard guru
 
-// Komponen Wrapper untuk memanggil hook
-const AppWrapper = () => {
-  // Panggil hook di sini! Ini akan membuat listener auth aktif secara global.
-  // Hook ini akan mengisi Redux store di background.
+const AppInitializer = () => {
   useFirebaseAuth();
   return <RouterProvider router={router} />;
 };
@@ -24,27 +22,42 @@ const AppWrapper = () => {
 const router = createBrowserRouter(
   createRoutesFromElements(
     <>
-      {/* Rute Publik: Hanya untuk user yang BELUM login */}
-      <Route element={<PublicLayout />}>
-        <Route index element={<LandingPage />} />
+      {/* --- RUTE PUBLIK (Bisa diakses semua orang) --- */}
+      {/* Landing page tidak dibungkus oleh layout otentikasi apa pun */}
+      <Route index element={<LandingPage />} />
+
+      {/* --- RUTE TAMU (Hanya untuk yang belum login) --- */}
+      <Route element={<GuestRoute />}>
         <Route path='/login' element={<LoginPage />} />
         <Route path='/register-teacher' element={<RegisterTeacher />} />
       </Route>
 
-      {/* Rute Terproteksi: Hanya untuk user yang SUDAH login */}
-      <Route element={<AuthenticatedLayout />}>
+      {/* --- RUTE TERPROTEKSI (Hanya untuk yang sudah login dengan peran tertentu) --- */}
+      
+      {/* Rute khusus Admin */}
+      <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route path='/admin' element={<AdminPage />} />
-        {/* <Route path='/student' element={<StudentDashboard/>}/> */}
+        {/* Tambahkan rute admin lainnya di sini, misal: <Route path="/admin/settings" ... /> */}
       </Route>
+
+      {/* Rute khusus Guru */}
+      <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
+        {/* <Route path='/teacher/dashboard' element={<TeacherDashboard />} /> */}
+        {/* Tambahkan rute guru lainnya di sini, misal: <Route path="/teacher/schedule" ... /> */}
+      </Route>
+
+      {/* Rute khusus Murid */}
+      {/* <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+        <Route path='/student/dashboard' element={<StudentDashboard />} />
+      </Route> */}
     </>
   )
 );
 
 function App() {
   return (
-    // Sediakan Redux store untuk seluruh aplikasi
     <Provider store={store}>
-      <AppWrapper />
+      <AppInitializer />
     </Provider>
   );
 }

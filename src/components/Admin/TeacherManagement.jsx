@@ -12,23 +12,19 @@ import {
 const TeacherManagement = () => {
     const [teachers, setTeachers] = useState([]);
     const [showForm, setShowForm] = useState(false);
-    const [editingTeacher, setEditingTeacher] = useState(null);
+    const [editingTeacher, setEditingTeacher] = useState(null); // null = mode tambah, objek = mode edit
     const [searchTerm, setSearchTerm] = useState('');
     const [filterInstrument, setFilterInstrument] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Efek ini akan berjalan saat komponen pertama kali dimuat
     useEffect(() => {
         loadTeachers();
     }, []);
 
-    // --- FUNGSI API ---
-
     const loadTeachers = async () => {
         setLoading(true);
         try {
-            // Ganti mock data dengan panggilan API sesungguhnya
-            const response = await api.get('/api/teachers'); // Asumsi endpoint ini ada
+            const response = await api.get('/api/teachers'); 
             setTeachers(response.data);
         } catch (error) {
             console.error('Error loading teachers:', error);
@@ -38,33 +34,43 @@ const TeacherManagement = () => {
         }
     };
 
-    const handleInviteTeacher = async (teacherData) => {
-        try {
-            // Panggil API untuk mengundang guru
-            const response = await api.post('/api/admin/invite-teacher', teacherData);
-            Swal.fire('Berhasil!', response.data.message, 'success');
-            loadTeachers(); // Muat ulang data untuk menampilkan guru yang baru diundang
-        } catch (error) {
-            console.error('Error inviting teacher:', error);
-            const errorMessage = error.response?.data?.message || 'Gagal mengirim undangan.';
-            Swal.fire('Gagal', errorMessage, 'error');
-        }
+    // --- FUNGSI PENGELOLA FORM ---
+
+    const handleAddTeacher = () => {
+        setEditingTeacher(null); // Pastikan tidak ada data guru yang diedit
+        setShowForm(true);      // Tampilkan form
     };
 
-    const handleUpdateTeacher = async (teacherData) => {
-        if (!editingTeacher) return;
+    const handleEditTeacher = (teacher) => {
+        setEditingTeacher(teacher); // Set data guru yang akan diedit
+        setShowForm(true);         // Tampilkan form
+    };
+
+    const handleCancelForm = () => {
+        setShowForm(false);
+        setEditingTeacher(null);
+    };
+
+    // [KUNCI PERUBAHAN] Satu fungsi untuk menangani 'save' dari form
+    // Baik untuk menambah guru baru maupun update
+    const handleSaveTeacher = async (teacherData) => {
         try {
-            // Panggil API untuk update guru
-            const response = await api.put(`/api/teachers/${editingTeacher.id}`, teacherData);
-            Swal.fire('Berhasil!', 'Data guru telah diperbarui.', 'success');
-            
-            // Tutup form dan muat ulang data
-            setShowForm(false);
+            if (editingTeacher) {
+                // --- LOGIKA UPDATE ---
+                const response = await api.put(`/api/teachers/${editingTeacher.id}`, teacherData);
+                Swal.fire('Berhasil!', 'Data guru telah diperbarui.', 'success');
+            } else {
+                // --- LOGIKA TAMBAH BARU (INVITE) ---
+                // Endpoint ini sesuai dengan controller backend Anda
+                const response = await api.post('/api/admin/teachers', teacherData);
+                Swal.fire('Berhasil!', response.data.message || 'Undangan telah berhasil dikirim.', 'success');
+            }
+            setShowForm(false); // Sembunyikan form setelah berhasil
             setEditingTeacher(null);
-            loadTeachers();
+            loadTeachers();     // Muat ulang daftar guru
         } catch (error) {
-            console.error('Error updating teacher:', error);
-            const errorMessage = error.response?.data?.message || 'Gagal memperbarui data guru.';
+            console.error('Error saving teacher:', error);
+            const errorMessage = error.response?.data?.message || 'Gagal menyimpan data guru.';
             Swal.fire('Gagal', errorMessage, 'error');
         }
     };
@@ -83,10 +89,9 @@ const TeacherManagement = () => {
 
         if (result.isConfirmed) {
             try {
-                // Panggil API untuk menghapus guru
                 await api.delete(`/api/teachers/${teacherId}`);
                 Swal.fire('Dihapus!', 'Data guru telah berhasil dihapus.', 'success');
-                loadTeachers(); // Muat ulang data setelah menghapus
+                loadTeachers();
             } catch (error) {
                 console.error('Error deleting teacher:', error);
                 Swal.fire('Gagal', 'Terjadi kesalahan saat menghapus data guru.', 'error');
@@ -94,63 +99,21 @@ const TeacherManagement = () => {
         }
     };
 
-    // --- HANDLER UNTUK UI ---
-    
-    const handleOpenInviteForm = () => {
-        Swal.fire({
-            title: 'Undang Guru Baru',
-            html: `
-                <input id="swal-input-name" class="swal2-input" placeholder="Nama Lengkap">
-                <input id="swal-input-email" class="swal2-input" placeholder="Alamat Email">
-            `,
-            focusConfirm: false,
-            showCancelButton: true,
-            confirmButtonText: 'Kirim Undangan',
-            cancelButtonText: 'Batal',
-            preConfirm: () => {
-                const name = document.getElementById('swal-input-name').value;
-                const email = document.getElementById('swal-input-email').value;
-                if (!name || !email) {
-                    Swal.showValidationMessage(`Nama dan Email wajib diisi`);
-                    return false;
-                }
-                return { name, email };
-            }
-        }).then((result) => {
-            if (result.isConfirmed && result.value) {
-                handleInviteTeacher(result.value);
-            }
-        });
-    };
-
-    const handleEditTeacher = (teacher) => {
-        setEditingTeacher(teacher);
-        setShowForm(true);
-    };
-
-    const handleCancelForm = () => {
-        setShowForm(false);
-        setEditingTeacher(null);
-    };
-
-    // --- LOGIKA FILTER ---
-
-    const filteredTeachers = teachers.filter(teacher => {
-        const matchesSearch = teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            teacher.email.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesInstrument = !filterInstrument || teacher.instrument === filterInstrument;
-        return matchesSearch && matchesInstrument;
-    });
+    const filteredTeachers = teachers.filter(teacher =>
+        (teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         teacher.email.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (!filterInstrument || teacher.instrument === filterInstrument)
+    );
 
     const instruments = ['Piano', 'Guitar', 'Violin', 'Drums', 'Vocal', 'Bass'];
 
     // --- RENDER ---
-
+    // Logika ini bertindak sebagai "router" internal komponen
     if (showForm) {
         return (
             <TeacherForm
                 teacher={editingTeacher}
-                onSave={handleUpdateTeacher} // Form hanya untuk update
+                onSave={handleSaveTeacher} // Berikan fungsi save yang sudah disatukan
                 onCancel={handleCancelForm}
             />
         );
@@ -165,6 +128,7 @@ const TeacherManagement = () => {
                     <p className="text-gray-600 mt-1">Kelola data guru Wisma Musik Rhapsodi</p>
                 </div>
                 <button
+                    // [KUNCI PERUBAHAN] onClick sekarang memanggil handleAddTeacher untuk menampilkan form
                     onClick={handleAddTeacher}
                     className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
                 >
