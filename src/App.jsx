@@ -13,6 +13,7 @@ import LoginPage from './pages/Login/LoginPage';
 import RegisterTeacher from './pages/RegisterTeacher';
 import AdminPage from './pages/Admin/AdminPage';
 // import TeacherDashboard from './pages/Teacher/TeacherDashboard'; // Contoh halaman dashboard guru
+import StudentDashboard from './pages/Student/StudentDashboard';
 
 const AppInitializer = () => {
   useFirebaseAuth();
@@ -47,9 +48,9 @@ const router = createBrowserRouter(
       </Route>
 
       {/* Rute khusus Murid */}
-      {/* <Route element={<ProtectedRoute allowedRoles={['student']} />}>
-        <Route path='/student/dashboard' element={<StudentDashboard />} />
-      </Route> */}
+      <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+        {/* <Route path='/student/dashboard' element={<StudentDashboard />} /> */}
+      </Route>
     </>
   )
 );
