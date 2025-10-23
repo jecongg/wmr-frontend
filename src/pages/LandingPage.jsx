@@ -69,7 +69,8 @@ function Header() {
           <a href="#programs" className="text-gray-600 hover:text-indigo-600 transition" onClick={(e) => handleScroll(e, 'programs')} >Program</a>
           <a href="#testimonials" className="text-gray-600 hover:text-indigo-600 transition" onClick={(e) => handleScroll(e, 'testimonials')} >Testimoni</a>
         </div>
-        <button className="hidden md:block bg-indigo-600 text-white px-5 py-2 rounded-full hover:bg-indigo-700 transition duration-300 shadow-md hover:shadow-lg font-medium">
+        <button className="hidden md:block bg-indigo-600 text-white px-5 py-2 rounded-full hover:bg-indigo-700 transition duration-300 shadow-md hover:shadow-lg font-medium"
+                onClick={() => window.open('http://wa.link/trsxj6', '_blank')}>
           Daftar Sekarang
         </button>
       </nav>
