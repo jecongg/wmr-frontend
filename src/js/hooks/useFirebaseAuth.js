@@ -14,12 +14,8 @@ export const useFirebaseAuth = () => {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             
-            // [KUNCI 2] Tambahkan "Gerbang Penjaga" (Guard Clause)
-            // Ambil status Redux saat ini SECARA LANGSUNG dari store.
             const { status } = store.getState().auth;
 
-            // Jika kita sudah loading atau sudah berhasil, jangan lakukan apa-apa.
-            // Ini akan memutus infinite loop.
             if (status === 'loading' || status === 'succeeded') {
                 return;
             }
@@ -39,19 +35,17 @@ export const useFirebaseAuth = () => {
                         dispatch(clearAuth());
                     }
                 } catch (error) {
-                    console.error("Gagal validasi user ke backend:", error);
+                    console.error("Gagal validasi user ke backend:", error.message);
                     await signOut(auth);
                     dispatch(clearAuth());
                 }
             } else {
-                // Jika tidak ada user, panggil clearAuth.
-                // Ini akan mengubah status menjadi 'failed', yang akan menghentikan loading.
                 dispatch(clearAuth());
             }
         });
 
         return () => unsubscribe();
-    }, [dispatch]); // Dependency array sudah benar
+    }, [dispatch]); 
 
     const signInWithGoogle = async () => {
         try {

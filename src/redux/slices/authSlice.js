@@ -13,6 +13,7 @@ const authSlice = createSlice({
     setUser: (state, action) => {
       const userData = action.payload;
       state.user = userData;
+      // console.log(state.user)
       state.status = 'succeeded'; // Status: Berhasil, user ditemukan
 
       if (userData) {

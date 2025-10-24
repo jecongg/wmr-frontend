@@ -6,12 +6,17 @@ import {
     ArrowLeftOnRectangleIcon 
 } from '@heroicons/react/24/outline';
 import { useFirebaseAuth } from '../../js/hooks/useFirebaseAuth';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectUser } from '../../redux/slices/authSlice';
 
 
 const Sidebar = ({ user, menus, activeComponent, setActiveComponent }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const { logout } = useFirebaseAuth();
-    
+    const dispatch = useDispatch();
+    const userData = useSelector(selectUser);
+
+
     const toggleSidebar = () => {
         setIsCollapsed(!isCollapsed);
     };
@@ -25,18 +30,19 @@ const Sidebar = ({ user, menus, activeComponent, setActiveComponent }) => {
             <div className="flex flex-col w-full">
                 
                 {/* Header Sidebar */}
-                <div className={`flex items-center justify-between h-24 px-5 bg-yellow-400 ${isCollapsed ? 'py-4' : 'pt-4'}`}>
+                <div className={`flex items-center justify-between h-24 px-5 bg-yellow-400 ${isCollapsed ? 'py-4' : 'pt-2'}`}>
                     {!isCollapsed && (
                         <div className='flex flex-col items-start'>
-                            <div className='rounded-full overflow-hidden w-12 h-12 mb-2 border-2 border-white shadow-sm'>
+                            {/* <div className='rounded-full overflow-hidden w-12 h-12 mb-2 border-2 border-white shadow-sm'>
                                 <img src={user.photoURL} alt="User" />
-                            </div>
-                            <span className="text-lg font-bold text-white mt-1 whitespace-nowrap">{user.displayName}</span>
+                            </div> */}
+                            <span className="text-lg font-bold text-white mt-1 whitespace-nowrap">Welcome,</span>
+                            <span className="text-sm font-bold text-white mt-1 whitespace-nowrap"> {userData.name}</span>
                         </div>
                     )}
                      {isCollapsed && (
                          <div className='rounded-full overflow-hidden w-10 h-10 border-2 border-white shadow-sm'>
-                            <img src={user.photoURL} alt="User" />
+                            <span>{userData.name.slice(0,0)}</span>
                         </div>
                      )}
                     <button onClick={toggleSidebar} className="text-white focus:outline-none self-start pt-2">
@@ -47,7 +53,6 @@ const Sidebar = ({ user, menus, activeComponent, setActiveComponent }) => {
                 {/* Navigasi Menu */}
                 <nav className="flex-1 px-3 py-4 space-y-2">
                     {menus.map((menu) => {
-                        // Ambil komponen Ikon dari prop 'icon'
                         const IconComponent = menu.icon; 
                         
                         return (

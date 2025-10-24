@@ -4,6 +4,10 @@ import { useSelector } from 'react-redux';
 import { useFirebaseAuth } from '../../js/hooks/useFirebaseAuth';
 // [KUNCI PERBAIKAN] Import selector dari authSlice
 import { selectUser, selectAuthStatus } from '../../redux/slices/authSlice'; // Sesuaikan path
+import { MdDashboard } from "react-icons/md";
+import { PiStudent } from "react-icons/pi";
+import { FaChalkboardTeacher } from "react-icons/fa";
+
 
 import Sidebar from '../../components/Layout/Sidebar';
 import TeacherManagement from '../../components/Admin/TeacherManagement';
@@ -11,9 +15,9 @@ import StudentManagement from '../../components/Admin/StudentManagement';
 import Dashboard from '../../components/Admin/Dashboard';
 
 const menus = [
-    { name: 'Dashboard', path: '/admin', icon: 'home', component: 'dashboard' },
-    { name: 'Guru', path: '/admin/guru', icon: 'users', component: 'teachers' },
-    { name: 'Murid', path: '/admin/murid', icon: 'users', component: 'students' },
+    { name: 'Dashboard', path: '/admin', icon: MdDashboard, component: 'dashboard' },
+    { name: 'Guru', path: '/admin/guru', icon: FaChalkboardTeacher, component: 'teachers' },
+    { name: 'Murid', path: '/admin/murid', icon: PiStudent, component: 'students' },
 ];
 
 export default function AdminPage() {
