@@ -12,7 +12,8 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/Login/LoginPage';
 import RegisterTeacher from './pages/RegisterTeacher';
 import AdminPage from './pages/Admin/AdminPage';
-// import TeacherDashboard from './pages/Teacher/TeacherDashboard'; // Contoh halaman dashboard guru
+import TeacherDashboard from './pages/Teacher/TeacherDashboard'; // Contoh halaman dashboard guru
+import StudentDashboard from './pages/Student/StudentDashboard';
 
 const AppInitializer = () => {
   useFirebaseAuth();
@@ -41,15 +42,17 @@ const router = createBrowserRouter(
       </Route>
 
       {/* Rute khusus Guru */}
-      <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
-        {/* <Route path='/teacher/dashboard' element={<TeacherDashboard />} /> */}
+      <Route >
+        {/* element={<ProtectedRoute allowedRoles={['teacher']} />} */}
+        <Route path='/teacher/dashboard' element={<TeacherDashboard />} />
         {/* Tambahkan rute guru lainnya di sini, misal: <Route path="/teacher/schedule" ... /> */}
       </Route>
 
       {/* Rute khusus Murid */}
-      {/* <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+      <Route >
+        {/* element={<ProtectedRoute allowedRoles={['student']} />} */}
         <Route path='/student/dashboard' element={<StudentDashboard />} />
-      </Route> */}
+      </Route>
     </>
   )
 );
