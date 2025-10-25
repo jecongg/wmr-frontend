@@ -8,6 +8,7 @@ import {
     CalendarDaysIcon, 
     MegaphoneIcon 
 } from '@heroicons/react/24/outline';
+import { useFirebaseAuth } from '../../js/hooks/useFirebaseAuth';
 
 // --- Komponen Placeholder untuk Halaman Lain ---
 const MyClassPage = () => <div className="p-8"><h1 className="text-2xl font-bold">Halaman Kelas Saya</h1><p>Konten detail kelas, materi, dan riwayat laporan akan ada di sini...</p></div>;
@@ -55,6 +56,9 @@ const recentReports = [
 export default function StudentDashboard() {
     // State untuk melacak komponen/halaman mana yang sedang aktif
     const [activeComponent, setActiveComponent] = useState('dashboard');
+
+    const { logout } = useFirebaseAuth();
+
 
     // Daftar menu yang akan dikirim ke Sidebar
     const menus = [
@@ -141,11 +145,11 @@ export default function StudentDashboard() {
 
     return (
         <div className="flex h-screen bg-slate-100">
-            {/* 1. Sidebar */}
             <Sidebar 
                 user={dummyUser}
                 menus={menus}
                 activeComponent={activeComponent}
+                onLogout={logout}
                 setActiveComponent={setActiveComponent}
             />
 

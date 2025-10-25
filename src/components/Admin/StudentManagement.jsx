@@ -132,13 +132,13 @@ const StudentManagement = () => {
         }
     };
 
-    // const filteredStudents = students.filter(student => {
-    //     const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    //                         student.email.toLowerCase().includes(searchTerm.toLowerCase());
-    //     // const matchesInstrument = !filterInstrument || student.instrument === filterInstrument;
-    //     // const matchesLevel = !filterLevel || student.level === filterLevel;
-    //     return matchesSearch;
-    // });
+    const searchStudents = filteredStudents.filter(student => {
+        const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            student.email.toLowerCase().includes(searchTerm.toLowerCase());
+        // const matchesInstrument = !filterInstrument || student.instrument === filterInstrument;
+        // const matchesLevel = !filterLevel || student.level === filterLevel;
+        return matchesSearch;
+    });
 
     // const instruments = ['Piano', 'Guitar', 'Violin', 'Drums', 'Vocal', 'Bass'];
     // const levels = ['Beginner', 'Intermediate', 'Advanced'];
@@ -204,7 +204,7 @@ const StudentManagement = () => {
                 </div>
             ) : (
                 <StudentList
-                    students={filteredStudents}
+                    students={searchStudents}
                     onEdit={handleEditStudent}
                     onDelete={handleDeleteStudent}
                 />

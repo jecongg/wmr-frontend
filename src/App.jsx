@@ -14,6 +14,7 @@ import RegisterTeacher from './pages/RegisterTeacher';
 import AdminPage from './pages/Admin/AdminPage';
 import TeacherDashboard from './pages/Teacher/TeacherDashboard'; // Contoh halaman dashboard guru
 import StudentDashboard from './pages/Student/StudentDashboard';
+import RegisterStudent from "./pages/Student/RegisterStudent";
 
 const AppInitializer = () => {
   useFirebaseAuth();
@@ -31,6 +32,7 @@ const router = createBrowserRouter(
       <Route element={<GuestRoute />}>
         <Route path='/login' element={<LoginPage />} />
         <Route path='/register-teacher' element={<RegisterTeacher />} />
+        <Route path='/register-student' element={<RegisterStudent />} />
       </Route>
 
       {/* --- RUTE TERPROTEKSI (Hanya untuk yang sudah login dengan peran tertentu) --- */}
