@@ -48,27 +48,29 @@ const TeacherManagement = () => {
     const handleCancelForm = () => {
         setShowForm(false);
         setEditingTeacher(null);
+        loadTeachers();
     };
 
     const handleSaveTeacher = async (teacherData) => {
         try {
+            let savedTeacher;
             if (editingTeacher) {
                 const response = await api.put(`http://localhost:3000/api/admin/teachers/${editingTeacher.id}`, teacherData);
                 dispatch(updateTeacher({ ...teacherData, id: editingTeacher.id }));
-                Swal.fire('Berhasil!', 'Data guru telah diperbarui.', 'success');
+                savedTeacher = { ...teacherData, id: editingTeacher.id };
             } else {
                 const response = await api.post('http://localhost:3000/api/admin/teachers', teacherData);
                 if (response.data.teacher) {
                     dispatch(addTeacher(response.data.teacher));
+                    savedTeacher = response.data.teacher;
                 }
-                Swal.fire('Berhasil!', response.data.message || 'Undangan telah berhasil dikirim.', 'success');
             }
-            setShowForm(false);
-            setEditingTeacher(null);
+            return savedTeacher; 
         } catch (error) {
             console.error('Error saving teacher:', error);
             const errorMessage = error.response?.data?.message || 'Gagal menyimpan data guru.';
             Swal.fire('Gagal', errorMessage, 'error');
+            throw error;
         }
     };
 

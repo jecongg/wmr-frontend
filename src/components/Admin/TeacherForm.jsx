@@ -4,6 +4,8 @@ import {
     PhotoIcon,
     XMarkIcon
 } from '@heroicons/react/24/outline';
+import api from '../../js/services/api';
+import Swal from 'sweetalert2';
 
 const TeacherForm = ({ teacher, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
@@ -17,6 +19,7 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
     });
 
     const [photoPreview, setPhotoPreview] = useState('');
+    const [photoFile, setPhotoFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
 
@@ -71,16 +74,20 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
                 return;
             }
 
+            setPhotoFile(file);
+
             const reader = new FileReader();
             reader.onload = (e) => {
-                const result = e.target.result;
-                setPhotoPreview(result);
-                setFormData(prev => ({
-                    ...prev,
-                    photo: result
-                }));
+                setPhotoPreview(e.target.result);
             };
             reader.readAsDataURL(file);
+            
+            if (errors.photo) {
+                setErrors(prev => ({
+                    ...prev,
+                    photo: ''
+                }));
+            }
         }
     };
 
@@ -124,11 +131,56 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
 
         setLoading(true);
         try {
-            await onSave(formData);
+            const savedTeacher = await onSave(formData);
+            
+            if (photoFile && savedTeacher?.id) {
+                await uploadPhoto(savedTeacher.id);
+            }
+
+            // Tampilkan pesan sukses
+            await Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: teacher 
+                    ? 'Data guru berhasil diperbarui.' + (photoFile ? ' Foto profil berhasil diupload.' : '')
+                    : 'Guru baru berhasil ditambahkan.' + (photoFile ? ' Foto profil berhasil diupload.' : ''),
+                timer: 2000,
+                showConfirmButton: false
+            });
+
+            // Tutup form
+            onCancel();
         } catch (error) {
             console.error('Error saving teacher:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal!',
+                text: error.response?.data?.message || 'Terjadi kesalahan saat menyimpan data guru.',
+            });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const uploadPhoto = async (teacherId) => {
+        try {
+            const formDataUpload = new FormData();
+            formDataUpload.append('photo', photoFile);
+
+            const response = await api.post(
+                `http://localhost:3000/api/admin/teachers/${teacherId}/upload-photo`,
+                formDataUpload,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                }
+            );
+
+            console.log('Foto berhasil diupload:', response.data.photoUrl);
+        } catch (error) {
+            console.error('Error uploading photo:', error);
+            throw error;
         }
     };
 
@@ -170,6 +222,7 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
                                             type="button"
                                             onClick={() => {
                                                 setPhotoPreview('');
+                                                setPhotoFile(null);
                                                 setFormData(prev => ({ ...prev, photo: '' }));
                                             }}
                                             className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"

@@ -41,10 +41,10 @@ const TeacherList = ({ teachers, onEdit, onDelete }) => {
                     <div className="p-4">
                         <div className="mb-3">
                             <h3 className="text-lg font-semibold text-gray-900 mb-1">{teacher.name}</h3>
-                            <div className="flex items-center text-blue-600">
+                            {/* <div className="flex items-center text-blue-600">
                                 <MusicalNoteIcon className="w-4 h-4 mr-1" />
                                 <span className="text-sm font-medium">{teacher.instrument}</span>
-                            </div>
+                            </div> */}
                         </div>
 
                         <div className="space-y-2 mb-4">
@@ -59,10 +59,10 @@ const TeacherList = ({ teachers, onEdit, onDelete }) => {
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 mb-4 text-xs text-gray-500">
-                            <div>
+                            {/* <div>
                                 <div className="font-medium">Pengalaman</div>
                                 <div>{teacher.experience}</div>
-                            </div>
+                            </div> */}
                             <div>
                                 <div className="font-medium">Bergabung</div>
                                 <div className="flex items-center">
