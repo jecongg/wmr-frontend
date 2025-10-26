@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { 
     UsersIcon, 
     AcademicCapIcon, 
@@ -9,15 +10,19 @@ import {
     TrashIcon
 } from '@heroicons/react/24/outline';
 import api from '../../js/services/api';
+import { selectAllTeachers } from '../../redux/slices/teacherSlice';
+import { selectAllStudents } from '../../redux/slices/studentSlice';
 
 const Dashboard = ({ user }) => {
+    const teachers = useSelector(selectAllTeachers);
+    const students = useSelector(selectAllStudents);
+
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [newAnnouncement, setNewAnnouncement] = useState('');
     const [showAddForm, setShowAddForm] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
-    // Fetch announcements
     useEffect(() => {
         fetchAnnouncements();
     }, []);
@@ -82,35 +87,22 @@ const Dashboard = ({ user }) => {
         };
         return new Date(dateString).toLocaleDateString('id-ID', options);
     };
+
     const stats = [
         {
             name: 'Total Guru',
-            value: '12',
+            value: teachers.length.toString(),
             icon: UsersIcon,
             color: 'bg-blue-500',
             changeType: 'positive'
         },
         {
             name: 'Total Murid',
-            value: '148',
+            value: students.length.toString(),
             icon: AcademicCapIcon,
             color: 'bg-green-500',
             changeType: 'positive'
         },
-        {
-            name: 'Kelas Aktif',
-            value: '8',
-            icon: BookOpenIcon,
-            color: 'bg-yellow-500',
-            changeType: 'neutral'
-        },
-        {
-            name: 'Tingkat Kehadiran',
-            value: '94%',
-            icon: ChartBarIcon,
-            color: 'bg-purple-500',
-            changeType: 'positive'
-        }
     ];
 
     return (

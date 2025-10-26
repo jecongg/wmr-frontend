@@ -1,22 +1,34 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../js/services/api'; // Pastikan path ini benar
+import api from '../../js/services/api';
 
-// Thunk untuk mengambil data guru
 export const fetchTeachers = createAsyncThunk('teachers/fetchTeachers', async () => {
-  const response = await api.get('/api/teachers');
+  const response = await api.get('http://localhost:3000/api/admin/list-teachers');
   return response.data;
 });
 
 const initialState = {
   items: [],
-  status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+  status: 'idle',
   error: null,
 };
 
 const teacherSlice = createSlice({
   name: 'teachers',
   initialState,
-  reducers: {}, // Kita akan handle state di extraReducers
+  reducers: {
+    addTeacher: (state, action) => {
+      state.items.push(action.payload);
+    },
+    updateTeacher: (state, action) => {
+      const index = state.items.findIndex(teacher => teacher.id === action.payload.id);
+      if (index !== -1) {
+        state.items[index] = action.payload;
+      }
+    },
+    removeTeacher: (state, action) => {
+      state.items = state.items.filter(teacher => teacher.id !== action.payload);
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchTeachers.pending, (state) => {
@@ -33,7 +45,10 @@ const teacherSlice = createSlice({
   },
 });
 
+export const { addTeacher, updateTeacher, removeTeacher } = teacherSlice.actions;
+
 export const selectAllTeachers = (state) => state.teachers.items;
 export const selectTeachersStatus = (state) => state.teachers.status;
+export const selectTeachersError = (state) => state.teachers.error;
 
 export default teacherSlice.reducer;

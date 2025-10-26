@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import StudentList from './StudentList';
 import StudentForm from './StudentForm';
 import { 
@@ -7,40 +8,27 @@ import {
     FunnelIcon 
 } from '@heroicons/react/24/outline';
 import Swal from 'sweetalert2';
+import api from '../../js/services/api';
+import { 
+    selectAllStudents, 
+    selectStudentsStatus,
+    addStudent,
+    updateStudent,
+    removeStudent,
+    fetchStudents
+} from '../../redux/slices/studentSlice';
 
 const StudentManagement = () => {
-    const [students, setStudents] = useState([]);
+    const dispatch = useDispatch();
+    
+    const students = useSelector(selectAllStudents);
+    const studentsStatus = useSelector(selectStudentsStatus);
+    const loading = studentsStatus === 'loading';
+
     const [showForm, setShowForm] = useState(false);
     const [editingStudent, setEditingStudent] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterLevel, setFilterLevel] = useState('');
-    const [loading, setLoading] = useState(false);
-
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try{
-                const res = await fetch('http://localhost:3000/api/admin/list-students');
-                const data = await res.json();
-
-                setStudents(data);
-            }catch(error){
-                console.error('Error fetching students:', error);
-            }
-        }
-        fetchData(); 
-    }, [students, showForm]);
-
-    // useEffect(() => {
-    //     setLoading(true);
-    //     try{
-    //         const update = async () => {
-    //             await upda
-    //         }
-    //     }catch(error){
-
-    //     }
-    // }, [editingStudent]);
 
     const handleAddStudent = () => {
         setEditingStudent(null);
@@ -54,18 +42,25 @@ const StudentManagement = () => {
     };
 
     const handleDeleteStudent = async (studentId) => {
-        if (window.confirm('Apakah Anda yakin ingin menghapus murid ini?')) {
-            try {
-                const res = await fetch(`http://localhost:3000/api/admin/students/${studentId}`, {
-                    method: 'DELETE',
-                });
+        const result = await Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Data murid yang dihapus tidak dapat dikembalikan!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, hapus!',
+            cancelButtonText: 'Batal'
+        });
 
-                if (!res.ok) {
-                    throw new Error('Gagal menghapus murid');
-                }
+        if (result.isConfirmed) {
+            try {
+                await api.delete(`/admin/students/${studentId}`);
+                dispatch(removeStudent(studentId));
+                Swal.fire('Dihapus!', 'Data murid telah berhasil dihapus.', 'success');
             } catch (error) {
                 console.error('Error deleting student:', error);
-                alert('Gagal menghapus murid');
+                Swal.fire('Gagal', 'Terjadi kesalahan saat menghapus data murid.', 'error');
             }
         }
     };
@@ -80,68 +75,45 @@ const StudentManagement = () => {
     const handleSaveStudent = async (studentData) => {
         try {
             if (editingStudent) {
-                const res = await fetch(`http://localhost:3000/api/admin/students/${editingStudent.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(studentData),
-                })
-
-                if(!res.ok){
-                    throw new Error('Gagal memperbarui data murid');
-                }
-                
+                await api.put(`/admin/students/${editingStudent.id}`, studentData);
+                dispatch(updateStudent({ ...studentData, id: editingStudent.id }));
                 Swal.fire({
                     title: 'Sukses',
                     text: 'Data Murid berhasil diperbarui',
                     icon: 'success',
                     confirmButtonText: 'OK'
                 });
-                
-                setShowForm(false);
-                setEditingStudent(null);
             } else {
-                const res = await fetch('http://localhost:3000/api/admin/students', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(studentData),
-                });
-                if (!res.ok) {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Gagal menambahkan murid',
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    })
+                const response = await api.post('/admin/students', studentData);
+                if (response.data.student) {
+                    dispatch(addStudent(response.data.student));
                 }
                 Swal.fire({
                     title: "Success",
                     text: "Murid berhasil ditambahkan",
                     icon: "success",
                     confirmButtonText: "OK"
-                })
-                setShowForm(false);
-                setEditingStudent(null);
+                });
             }
+            setShowForm(false);
+            setEditingStudent(null);
         } catch (error) {
             console.error('Error saving student:', error);
-            alert('Gagal menyimpan data murid');
+            Swal.fire({
+                title: 'Error',
+                text: error.response?.data?.message || 'Gagal menyimpan data murid',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
         }
     };
 
     const searchStudents = filteredStudents.filter(student => {
         const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             student.email.toLowerCase().includes(searchTerm.toLowerCase());
-        // const matchesInstrument = !filterInstrument || student.instrument === filterInstrument;
-        // const matchesLevel = !filterLevel || student.level === filterLevel;
         return matchesSearch;
     });
 
-    // const instruments = ['Piano', 'Guitar', 'Violin', 'Drums', 'Vocal', 'Bass'];
-    // const levels = ['Beginner', 'Intermediate', 'Advanced'];
 
     if (showForm) {
         return (

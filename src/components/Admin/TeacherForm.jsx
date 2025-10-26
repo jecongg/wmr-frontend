@@ -10,8 +10,6 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
         name: '',
         email: '',
         phone: '',
-        instrument: '',
-        experience: '',
         photo: '',
         bio: '',
         hourlyRate: '',
@@ -22,8 +20,6 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
 
-    const instruments = ['Piano', 'Guitar', 'Violin', 'Drums', 'Vocal', 'Bass', 'Flute', 'Saxophone'];
-    const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 
     useEffect(() => {
         if (teacher) {
@@ -31,11 +27,11 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
                 name: teacher.name || '',
                 email: teacher.email || '',
                 phone: teacher.phone || '',
-                instrument: teacher.instrument || '',
-                experience: teacher.experience || '',
                 photo: teacher.photo || '',
                 bio: teacher.bio || '',
-                hourlyRate: teacher.hourlyRate || '',
+                age: teacher.age || '',
+                gender: teacher.gender || '',
+                // hourlyRate: teacher.hourlyRate || '',
                 availability: teacher.availability || []
             });
             setPhotoPreview(teacher.photo || '');
@@ -114,13 +110,6 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
             newErrors.phone = 'Nomor telepon wajib diisi';
         }
 
-        if (!formData.instrument) {
-            newErrors.instrument = 'Instrumen wajib dipilih';
-        }
-
-        if (!formData.experience.trim()) {
-            newErrors.experience = 'Pengalaman wajib diisi';
-        }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -252,6 +241,52 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
                                 <p className="mt-1 text-sm text-red-600">{errors.email}</p>
                             )}
                         </div>
+                        <div className='flex flex-row gap-2 w-full'>
+                            <div className='w-full'>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Umur *</label>
+                                <input
+                                    type="number"
+                                    name="age"
+                                    value={formData.age}
+                                    onChange={handleInputChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="20"
+                                />
+                                {errors.age && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.age}</p>
+                                )}
+                            </div>
+                            <div className='w-full'>
+                                <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin *</label>
+                                <select
+                                    name="gender"
+                                    value={formData.gender}
+                                    onChange={handleInputChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                >
+                                    <option value="male">Laki-laki</option>
+                                    <option value="female">Perempuan</option>
+                                </select>
+                                {errors.gender && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.gender}</p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap*</label>
+                            <input
+                                type="text"
+                                name="address"
+                                value={formData.address}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Jl. Raya No. 123"
+                            />
+                            {errors.address && (
+                                <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+                            )}
+                        </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -272,50 +307,8 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
                             )}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Instrumen *
-                                </label>
-                                <select
-                                    name="instrument"
-                                    value={formData.instrument}
-                                    onChange={handleInputChange}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                        errors.instrument ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                >
-                                    <option value="">Pilih Instrumen</option>
-                                    {instruments.map(instrument => (
-                                        <option key={instrument} value={instrument}>{instrument}</option>
-                                    ))}
-                                </select>
-                                {errors.instrument && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.instrument}</p>
-                                )}
-                            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Pengalaman *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="experience"
-                                    value={formData.experience}
-                                    onChange={handleInputChange}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                        errors.experience ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                    placeholder="5 tahun"
-                                />
-                                {errors.experience && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.experience}</p>
-                                )}
-                            </div>
-                        </div>
-
-                        <div>
+                        {/* <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Tarif per Jam (Rp)
                             </label>
@@ -327,7 +320,7 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 placeholder="150000"
                             />
-                        </div>
+                        </div> */}
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -343,24 +336,7 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Ketersediaan Hari
-                            </label>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                {days.map(day => (
-                                    <label key={day} className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.availability.includes(day)}
-                                            onChange={(e) => handleAvailabilityChange(day, e.target.checked)}
-                                            className="mr-2 rounded text-blue-600 focus:ring-blue-500"
-                                        />
-                                        <span className="text-sm text-gray-700">{day}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
+                        
                     </div>
                 </div>
 
