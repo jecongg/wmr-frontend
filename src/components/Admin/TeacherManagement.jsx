@@ -86,7 +86,7 @@ const TeacherManagement = () => {
 
         if (result.isConfirmed) {
             try {
-                await api.delete(`/api/teachers/${teacherId}`);
+                await api.delete(`http://localhost:3000/api/admin/teachers/${teacherId}`);
                 dispatch(removeTeacher(teacherId));
                 Swal.fire('Dihapus!', 'Data guru telah berhasil dihapus.', 'success');
             } catch (error) {

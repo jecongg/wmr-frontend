@@ -75,7 +75,7 @@ const StudentManagement = () => {
     const handleSaveStudent = async (studentData) => {
         try {
             if (editingStudent) {
-                await api.put(`/admin/students/${editingStudent.id}`, studentData);
+                await api.put(`http://localhost:8080/api/v1/admin/students/${editingStudent.id}`, studentData);
                 dispatch(updateStudent({ ...studentData, id: editingStudent.id }));
                 Swal.fire({
                     title: 'Sukses',
