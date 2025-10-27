@@ -7,7 +7,7 @@ import {
 } from '@heroicons/react/24/outline';
 import api from '../../js/services/api';
 
-const StudentForm = ({ student, onSave, onCancel }) => {
+const StudentForm = ({ student, onSave, onPhotoUpdate, onCancel }) => {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -131,6 +131,10 @@ const StudentForm = ({ student, onSave, onCancel }) => {
             if(response.status === 200){
                 setFormData(prev => ({ ...prev, photo: response.data.photo }));
                 setPhotoPreview(response.data.photo);
+                
+                if (onPhotoUpdate && student) {
+                    onPhotoUpdate(student.id, response.data.photo);
+                }
             }
             setLoading(false);
         }catch(error){
@@ -146,15 +150,16 @@ const StudentForm = ({ student, onSave, onCancel }) => {
             return;
         }
 
-        if (photoFile) {
-            await uploadPhoto(student._id);
-        }
-
         setLoading(true);
         try {
             await onSave(formData);
+            
+            if (photoFile && student) {
+                await uploadPhoto(student._id);
+            }
         } catch (error) {
             console.error('Error saving student:', error);
+        } finally {
             setLoading(false);
         }
     };

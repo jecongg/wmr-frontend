@@ -22,11 +22,18 @@ const studentSlice = createSlice({
     updateStudent: (state, action) => {
       const index = state.students.findIndex(student => student.id === action.payload.id);
       if (index !== -1) {
-        state.students[index] = action.payload;
+        state.students[index] = { ...state.students[index], ...action.payload };
+      }
+    },
+    updateStudentPhoto: (state, action) => {
+      const { id, photo } = action.payload;
+      const index = state.students.findIndex(student => student.id === id);
+      if (index !== -1) {
+        state.students[index].photo = photo;
       }
     },
     removeStudent: (state, action) => {
-      state.items = state.students.filter(student => student.id !== action.payload);
+      state.students = state.students.filter(student => student.id !== action.payload);
     },
   },
   extraReducers: (builder) => {
@@ -45,7 +52,7 @@ const studentSlice = createSlice({
   },
 });
 
-export const { addStudent, updateStudent, removeStudent } = studentSlice.actions;
+export const { addStudent, updateStudent, updateStudentPhoto, removeStudent } = studentSlice.actions;
 
 export const selectAllStudents = (state) => state.students.students;
 export const selectStudentsStatus = (state) => state.students.status;

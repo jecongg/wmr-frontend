@@ -14,6 +14,7 @@ import {
     selectStudentsStatus,
     addStudent,
     updateStudent,
+    updateStudentPhoto,
     removeStudent,
     fetchStudents
 } from '../../redux/slices/studentSlice';
@@ -75,11 +76,14 @@ const StudentManagement = () => {
     const handleSaveStudent = async (studentData) => {
         try {
             if (editingStudent) {
-                console.log(editingStudent.id);
                 const response = await api.put(`http://localhost:3000/api/admin/students/${editingStudent.id}`, studentData);
-                console.log(response);
                 
-                dispatch(updateStudent({ ...studentData, id: editingStudent.id }));
+                if (response.data.student) {
+                    dispatch(updateStudent(response.data.student));
+                } else {
+                    dispatch(updateStudent({ ...response.data, id: editingStudent.id }));
+                }
+                
                 Swal.fire({
                     title: 'Sukses',
                     text: 'Data Murid berhasil diperbarui',
@@ -111,6 +115,10 @@ const StudentManagement = () => {
         }
     };
 
+    const handlePhotoUpdate = (studentId, photoUrl) => {
+        dispatch(updateStudentPhoto({ id: studentId, photo: photoUrl }));
+    };
+
     const searchStudents = filteredStudents.filter(student => {
         const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             student.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -123,6 +131,7 @@ const StudentManagement = () => {
             <StudentForm
                 student={editingStudent}
                 onSave={handleSaveStudent}
+                onPhotoUpdate={handlePhotoUpdate}
                 onCancel={() => {
                     setShowForm(false);
                     setEditingStudent(null);
