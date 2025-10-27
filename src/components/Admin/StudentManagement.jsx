@@ -75,28 +75,62 @@ const StudentManagement = () => {
     const handleSaveStudent = async (studentData) => {
         try {
             if (editingStudent) {
-                await api.put(`http://localhost:3000/api/admin/students/${editingStudent.id}`, studentData);
-                dispatch(updateStudent({ ...studentData, id: editingStudent.id }));
+                // --- LOGIKA EDIT ---
+                
+                // PERBAIKAN: Ambil ID baik dari ._id atau .id
+                const studentId = editingStudent._id || editingStudent.id;
+
+                if (!studentId) {
+                    Swal.fire('Error', 'ID Murid tidak ditemukan.', 'error');
+                    return; 
+                }
+                
+                await api.put(`http://localhost:3000/api/admin/students/${studentId}`, studentData);
+                
+                // PERBAIKAN: Saat update Redux, pastikan KEDUA ID ada
+                dispatch(updateStudent({ 
+                    ...studentData, 
+                    id: studentId, 
+                    _id: studentId 
+                }));
+                
                 Swal.fire({
                     title: 'Sukses',
                     text: 'Data Murid berhasil diperbarui',
                     icon: 'success',
                     confirmButtonText: 'OK'
                 });
+
+                setShowForm(false);
+                setEditingStudent(null);
+                
             } else {
+                // --- LOGIKA ADD ---
                 const response = await api.post('http://localhost:3000/api/admin/students', studentData);
+                
                 if (response.data.student) {
-                    dispatch(addStudent(response.data.student));
+                    const newStudent = response.data.student;
+                    
+                    // PERBAIKAN: Saat add ke Redux, pastikan KEDUA ID ada
+                    // (Backend mengembalikan '_id', kita tambahkan 'id')
+                    dispatch(addStudent({
+                        ...newStudent,
+                        id: newStudent._id 
+                    }));
                 }
+                
                 Swal.fire({
                     title: "Success",
                     text: "Murid berhasil ditambahkan",
                     icon: "success",
                     confirmButtonText: "OK"
                 });
+            
+                setShowForm(false);
+                setEditingStudent(null);
+                
+                return response.data.student; 
             }
-            setShowForm(false);
-            setEditingStudent(null);
         } catch (error) {
             console.error('Error saving student:', error);
             Swal.fire({
@@ -105,6 +139,7 @@ const StudentManagement = () => {
                 icon: 'error',
                 confirmButtonText: 'OK'
             });
+            throw error; 
         }
     };
 
