@@ -89,8 +89,9 @@ const StudentManagement = () => {
                 
                 // PERBAIKAN: Saat update Redux, pastikan KEDUA ID ada
                 dispatch(updateStudent({ 
-                    ...studentData, 
-                    id: studentId, 
+                    ...editingStudent,  // 1. Ambil semua data lama (termasuk deletedAt: null, status, dll)
+                    ...studentData,       // 2. Timpa dengan data baru dari form (nama, email, dll)
+                    id: studentId,        // 3. Pastikan ID-nya konsisten
                     _id: studentId 
                 }));
                 
