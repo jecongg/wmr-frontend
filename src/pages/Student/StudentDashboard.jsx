@@ -9,6 +9,7 @@ import {
     MegaphoneIcon 
 } from '@heroicons/react/24/outline';
 import { useFirebaseAuth } from '../../js/hooks/useFirebaseAuth';
+import StudentAttendanceHistory from '../../components/Student/StudentAttendanceHistory';
 
 // --- Komponen Placeholder untuk Halaman Lain ---
 const MyClassPage = () => <div className="p-8"><h1 className="text-2xl font-bold">Halaman Kelas Saya</h1><p>Konten detail kelas, materi, dan riwayat laporan akan ada di sini...</p></div>;
@@ -66,6 +67,7 @@ export default function StudentDashboard() {
         { name: 'Kelas Saya', component: 'my-class', icon: MusicalNoteIcon },
         { name: 'Ganti Jadwal', component: 'reschedule', icon: CalendarDaysIcon },
         { name: 'Pengumuman', component: 'announcements', icon: MegaphoneIcon },
+        { name: 'Riwayat Absensi', component: 'attendance-history', icon: CalendarDaysIcon },
     ];
 
     // --- KONTEN DASHBOARD (DIGABUNG DI SINI) ---
@@ -135,6 +137,8 @@ export default function StudentDashboard() {
                 return <ReschedulePage />;
             case 'announcements':
                 return <AllAnnouncementsPage />;
+            case 'attendance-history':
+                return <StudentAttendanceHistory />;
             default:
                 return <RenderDashboardContent />;
         }

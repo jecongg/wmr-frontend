@@ -9,6 +9,7 @@ import {
     MegaphoneIcon, 
     CheckBadgeIcon 
 } from '@heroicons/react/24/outline';
+import TeacherAttendancePage from './TeacherAttendance';
 
 // --- Komponen Placeholder untuk Halaman Lain ---
 // Ini hanya contoh, nantinya Anda akan membuat file komponen penuh untuk ini
@@ -143,7 +144,7 @@ export default function TeacherDashboard() {
             case 'reports':
                 return <ReportsPage />;
             case 'attendance':
-                return <AttendancePage />;
+                return <TeacherAttendancePage />;
             case 'announcements':
                 return <AnnouncementsPage />;
             default:
