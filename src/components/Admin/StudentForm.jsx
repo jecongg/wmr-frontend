@@ -32,7 +32,7 @@ const StudentForm = ({ student, onSave, onPhotoUpdate, onCancel }) => {
                 email: student.email || '',
                 phone_number: student.phone_number || '',
                 age: student.age || '',
-                photo: student.photo || '',
+                photo: student.photo || '', 
                 parent_name: student.parent_name || '',
                 parent_phone: student.parent_phone || '',
                 address: student.address || '',
