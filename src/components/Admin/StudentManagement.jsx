@@ -55,7 +55,7 @@ const StudentManagement = () => {
 
         if (result.isConfirmed) {
             try {
-                await api.delete(`/admin/students/${studentId}`);
+                await api.delete(`http://localhost:3000/api/admin/students/${studentId}`);
                 dispatch(removeStudent(studentId));
                 Swal.fire('Dihapus!', 'Data murid telah berhasil dihapus.', 'success');
             } catch (error) {
@@ -75,7 +75,10 @@ const StudentManagement = () => {
     const handleSaveStudent = async (studentData) => {
         try {
             if (editingStudent) {
-                await api.put(`http://localhost:8080/api/v1/admin/students/${editingStudent.id}`, studentData);
+                console.log(editingStudent.id);
+                const response = await api.put(`http://localhost:3000/api/admin/students/${editingStudent.id}`, studentData);
+                console.log(response);
+                
                 dispatch(updateStudent({ ...studentData, id: editingStudent.id }));
                 Swal.fire({
                     title: 'Sukses',
@@ -84,7 +87,7 @@ const StudentManagement = () => {
                     confirmButtonText: 'OK'
                 });
             } else {
-                const response = await api.post('/admin/students', studentData);
+                const response = await api.post('http://localhost:3000/api/admin/students', studentData);
                 if (response.data.student) {
                     dispatch(addStudent(response.data.student));
                 }

@@ -37,7 +37,7 @@ const Sidebar = ({ user, menus, activeComponent, setActiveComponent }) => {
             setActiveComponent(menu.component);
             setOpenDropdown(null);
         }
-    };
+    };s
 
 
     const handleLogout = () => {
