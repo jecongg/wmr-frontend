@@ -21,29 +21,17 @@ const StudentList = ({ students, onEdit, onDelete }) => {
         );
     }
 
-    const getLevelBadgeColor = (level) => {
-        switch (level) {
-            case 'Beginner':
-                return 'bg-green-100 text-green-800';
-            case 'Intermediate':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'Advanced':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
-    };
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {students.map((student) => (
                 <div key={student.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                     <div className="relative">
-                        {/* <img
+                        <img
                             src={student.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=10b981&color=fff&size=200`}
                             alt={student.name}
                             className="w-full h-48 object-cover"
-                        /> */}
+                        />
                         {/* <div className="absolute top-3 left-3 flex space-x-2">
                             <div className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelBadgeColor(student.level)}`}>
                                 {student.level}

@@ -5,6 +5,7 @@ import {
     XMarkIcon,
     UserIcon
 } from '@heroicons/react/24/outline';
+import api from '../../js/services/api';
 
 const StudentForm = ({ student, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
@@ -19,6 +20,8 @@ const StudentForm = ({ student, onSave, onCancel }) => {
     });
 
     const [photoPreview, setPhotoPreview] = useState('');
+    const [photoFile, setPhotoFile] = useState(null);
+
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
 
@@ -71,6 +74,8 @@ const StudentForm = ({ student, onSave, onCancel }) => {
                 return;
             }
 
+            setPhotoFile(file);
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 const result = e.target.result;
@@ -117,11 +122,32 @@ const StudentForm = ({ student, onSave, onCancel }) => {
         return Object.keys(newErrors).length === 0;
     };
 
+    const uploadPhoto = async (studentId) => {
+        try{
+            setLoading(true);
+            const formData = new FormData();
+            formData.append('photo', photoFile);
+            const response = await api.post(`http://localhost:3000/api/admin/students/${studentId}/upload-photo`, formData);
+            if(response.status === 200){
+                setFormData(prev => ({ ...prev, photo: response.data.photo }));
+                setPhotoPreview(response.data.photo);
+            }
+            setLoading(false);
+        }catch(error){
+            console.error('Error uploading photo:', error);
+            setLoading(false);
+        }
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         
         if (!validateForm()) {
             return;
+        }
+
+        if (photoFile) {
+            await uploadPhoto(student._id);
         }
 
         setLoading(true);
@@ -169,8 +195,10 @@ const StudentForm = ({ student, onSave, onCancel }) => {
                                         />
                                         <button
                                             type="button"
+                                            onChange={handlePhotoChange}
                                             onClick={() => {
                                                 setPhotoPreview('');
+                                                setPhotoFile(null);
                                                 setFormData(prev => ({ ...prev, photo: '' }));
                                             }}
                                             className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"

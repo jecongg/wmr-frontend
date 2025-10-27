@@ -55,7 +55,7 @@ const StudentManagement = () => {
 
         if (result.isConfirmed) {
             try {
-                await api.delete(`/admin/students/${studentId}`);
+                await api.delete(`http://localhost:3000/api/admin/students/${studentId}`);
                 dispatch(removeStudent(studentId));
                 Swal.fire('Dihapus!', 'Data murid telah berhasil dihapus.', 'success');
             } catch (error) {

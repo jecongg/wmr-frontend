@@ -86,6 +86,8 @@ const TeacherManagement = () => {
             cancelButtonText: 'Batal'
         });
 
+        console.log('teacherId', teacherId);
+
         if (result.isConfirmed) {
             try {
                 await api.delete(`http://localhost:3000/api/admin/teachers/${teacherId}`);

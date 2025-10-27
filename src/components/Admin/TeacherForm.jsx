@@ -137,7 +137,6 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
                 await uploadPhoto(savedTeacher.id);
             }
 
-            // Tampilkan pesan sukses
             await Swal.fire({
                 icon: 'success',
                 title: 'Berhasil!',
@@ -148,7 +147,6 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
                 showConfirmButton: false
             });
 
-            // Tutup form
             onCancel();
         } catch (error) {
             console.error('Error saving teacher:', error);
