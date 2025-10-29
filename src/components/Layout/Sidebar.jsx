@@ -11,7 +11,7 @@ import { selectUser } from '../../redux/slices/authSlice';
 import { ChevronDownIcon } from 'lucide-react';
 
 
-const Sidebar = ({ user, menus, activeComponent, setActiveComponent }) => {
+const Sidebar = ({ user, menus, activeComponent, setActiveComponent, onLogout }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const { logout } = useFirebaseAuth();
     const dispatch = useDispatch();
@@ -41,9 +41,10 @@ const Sidebar = ({ user, menus, activeComponent, setActiveComponent }) => {
 
 
     const handleLogout = () => {
-        logout();
-    } 
-
+        if (onLogout) {
+            onLogout();
+        }
+    }
     return (
         <div className={`flex flex-shrink-0 h-screen bg-white transition-all duration-300 ${isCollapsed ? 'w-30' : 'w-72'}`}>
             <div className="flex flex-col w-full">
@@ -124,7 +125,7 @@ const Sidebar = ({ user, menus, activeComponent, setActiveComponent }) => {
                         {!isCollapsed && 'Pengaturan'}
                     </button>
                     <button 
-                        onClick={() => handleLogout()}
+                        onClick={handleLogout}
                         title={isCollapsed ? 'Logout' : ''}
                         className={`w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-100 rounded-lg ${isCollapsed ? 'justify-center' : ''}`}
                     >
