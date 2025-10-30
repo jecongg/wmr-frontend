@@ -4,9 +4,6 @@ import api from '../../js/services/api';
 import { UserCircleIcon, MagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import Swal from 'sweetalert2';
 
-const BASE_URL = 'http://localhost:3000/api';
-
-
 const StudentCard = ({ assignment, onClick }) => {
     const student = assignment.student;
     const schedule = assignment.scheduleDay && assignment.startTime && assignment.endTime 
@@ -60,8 +57,8 @@ const TeacherStudents = ({ onStudentClick }) => {
         const fetchStudents = async () => {
             try {
                 setLoading(true);
-                const response = await api.get(`${BASE_URL}/teacher/my-students`);
-                
+                const response = await api.get(`/api/assignments/teacher/me`);
+
                 if (response.data.success) {
                     setAssignments(response.data.data);
                 }
