@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 import { useFirebaseAuth } from '../../js/hooks/useFirebaseAuth';
 import { selectUser } from '../../redux/slices/authSlice';
@@ -94,7 +95,7 @@ const TeacherDashboardHome = ({onStudentClick }) => {
                             <ul className="divide-y divide-gray-200">
                                 {schedules.map((schedule) => (
                                     <div key={schedule.scheduleId} className="py-4  rounded-md p-5 mb-3 shadow-lg outline outline-black/5">
-                                        <p onClick={() => handleScheduleClick(schedule.students[0])} className="font-semibold text-indigo-700 cursor-pointer">{schedule.time} - {schedule.lesson}</p>
+                                        <p className="font-semibold text-indigo-700">{schedule.time} - {schedule.lesson}</p>
                                         <p>Murid: {schedule.students.map(s => s.name).join(', ')}</p>
                                     </div>
                                 ))}
@@ -134,16 +135,45 @@ const TeacherDashboardHome = ({onStudentClick }) => {
 export default function TeacherDashboard() {
     console.log('%c TEACHER DASHBOARD IS RENDERING! ', 'background: #222; color: #bada55');
     
-    const [activeComponent, setActiveComponent] = useState('dashboard');
+    const navigate = useNavigate();
+    const location = useLocation();
     const [selectedStudentId, setSelectedStudentId] = useState(null);
     const { logout } = useFirebaseAuth();
     const user = useSelector(selectUser);
+
+    const getActiveComponentFromPath = () => {
+        const path = location.pathname;
+        if (path.includes('/students')) return 'students';
+        if (path.includes('/student-detail')) return 'student-detail';
+        if (path.includes('/reschedule')) return 'reschedule';
+        return 'dashboard';
+    };
+
+    const [activeComponent, setActiveComponent] = useState(getActiveComponentFromPath());
+
+    useEffect(() => {
+        const pathMap = {
+            'dashboard': '/teacher/dashboard',
+            'students': '/teacher/students',
+            'student-detail': '/teacher/student-detail',
+            'reschedule': '/teacher/reschedule',
+        };
+
+        const newPath = pathMap[activeComponent] ;        
+        if (location.pathname !== newPath) {
+            navigate(newPath, { replace: true });
+        }
+    }, [activeComponent, navigate]);
+
+    useEffect(() => {
+        setActiveComponent(getActiveComponentFromPath());
+    }, [location.pathname]);
 
     const menus = [
         { name: 'Dashboard', component: 'dashboard', icon: HomeIcon },
         { name : 'Murid Saya', component: 'students', icon: UserGroupIcon }, 
         // { name: 'Buat Laporan Les', component: 'lesson-report', icon: DocumentTextIcon },
-        { name: 'Modul Belajar', component: 'modules', icon: FolderIcon },
+        // { name: 'Modul Belajar', component: 'modules', icon: FolderIcon },
         { name: 'Persetujuan Jadwal', component: 'reschedule', icon: ClockIcon },
         // { name: 'Buat Pengumuman', component: 'announcements', icon: SpeakerWaveIcon },
     ];
@@ -166,8 +196,8 @@ export default function TeacherDashboard() {
                 return <TeacherStudents onStudentClick={showStudentDetail} />;
             // case 'lesson-report':
             //     return <TeacherLessonReport />;
-            case 'modules':
-                return <TeacherModules />;
+            // case 'modules':
+            //     return <TeacherModules />;
             case 'reschedule':
                 return <TeacherReschedule />;
             case 'announcements':

@@ -10,7 +10,12 @@ import {
     PlusIcon,
     CheckCircleIcon,
     XCircleIcon,
-    ExclamationCircleIcon
+    ExclamationCircleIcon,
+    FolderIcon,
+    DocumentIcon,
+    LinkIcon,
+    VideoCameraIcon,
+    TrashIcon
 } from '@heroicons/react/24/outline';
 
 const BASE_URL = 'http://localhost:3000/api';
@@ -23,8 +28,10 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
     
     const [studentData, setStudentData] = useState(null);
     const [attendanceHistory, setAttendanceHistory] = useState([]);
+    const [modules, setModules] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [showModuleForm, setShowModuleForm] = useState(false);
     
     const [formData, setFormData] = useState({
         date: new Date().toISOString().split('T')[0],
@@ -36,9 +43,19 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
         homework: ''
     });
 
+    const [moduleFormData, setModuleFormData] = useState({
+        title: '',
+        description: '',
+        category: '',
+        type: 'link',
+        link: '',
+        file: null
+    });
+
     useEffect(() => {
         fetchStudentData();
         fetchAttendanceHistory();
+        fetchModules();
     }, [studentId]);
 
     const fetchStudentData = async () => {
@@ -75,6 +92,94 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
             }
         } catch (error) {
             console.error('Error fetching attendance history:', error);
+        }
+    };
+
+    const fetchModules = async () => {
+        try {
+            const response = await api.get(`${BASE_URL}/modules/student/${studentId}`);
+            if (response.data) {
+                setModules(response.data);
+            }
+        } catch (error) {
+            console.error('Error fetching modules:', error);
+        }
+    };
+
+    const handleSubmitModule = async (e) => {
+        e.preventDefault();
+        
+        try {
+            const formData = new FormData();
+            formData.append('title', moduleFormData.title);
+            formData.append('description', moduleFormData.description);
+            formData.append('category', moduleFormData.category);
+            formData.append('type', moduleFormData.type);
+            formData.append('studentId', studentId);
+            
+            if (moduleFormData.type === 'file' && moduleFormData.file) {
+                formData.append('file', moduleFormData.file);
+            } else {
+                formData.append('link', moduleFormData.link);
+            }
+
+            const response = await api.post(`${BASE_URL}/modules/teacher/create`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            if (response.data) {
+                Swal.fire('Sukses', 'Modul berhasil ditambahkan', 'success');
+                setShowModuleForm(false);
+                setModuleFormData({
+                    title: '',
+                    description: '',
+                    category: '',
+                    type: 'link',
+                    link: '',
+                    file: null
+                });
+                fetchModules();
+            }
+        } catch (error) {
+            console.error('Error submitting module:', error);
+            Swal.fire('Error', error.response?.data?.message || 'Gagal menambahkan modul', 'error');
+        }
+    };
+
+    const handleDeleteModule = async (moduleId) => {
+        const result = await Swal.fire({
+            title: 'Hapus Modul?',
+            text: 'Modul yang dihapus tidak dapat dikembalikan',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await api.delete(`${BASE_URL}/modules/${moduleId}`);
+                Swal.fire('Terhapus!', 'Modul berhasil dihapus', 'success');
+                fetchModules();
+            } catch (error) {
+                console.error('Error deleting module:', error);
+                Swal.fire('Error', 'Gagal menghapus modul', 'error');
+            }
+        }
+    };
+
+    const getModuleIcon = (type) => {
+        switch(type) {
+            case 'file':
+                return <DocumentIcon className="w-5 h-5 text-blue-500" />;
+            case 'video':
+                return <VideoCameraIcon className="w-5 h-5 text-red-500" />;
+            case 'link':
+                return <LinkIcon className="w-5 h-5 text-green-500" />;
+            default:
+                return <FolderIcon className="w-5 h-5 text-gray-500" />;
         }
     };
 
@@ -219,7 +324,14 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
                     </div>
                 </div>
             </div>
-            <div className='flex justify-end mb-4'>
+            <div className='flex justify-end mb-4 gap-3'>
+                <button
+                    onClick={() => setShowModuleForm(!showModuleForm)}
+                    className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                >
+                    <FolderIcon className="w-5 h-5 mr-2" />
+                    Tambah Modul
+                </button>
                 <button
                     onClick={() => setShowForm(!showForm)}
                     className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
@@ -228,6 +340,116 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
                     Laporan Baru
                 </button>
             </div>
+
+            {/* Form Module */}
+            {showModuleForm && (
+                <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">Tambah Modul Belajar</h3>
+                    <form onSubmit={handleSubmitModule} className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Judul Modul <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={moduleFormData.title}
+                                onChange={(e) => setModuleFormData({ ...moduleFormData, title: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                placeholder="Contoh: Latihan Tangga Nada C Mayor"
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Deskripsi
+                            </label>
+                            <textarea
+                                value={moduleFormData.description}
+                                onChange={(e) => setModuleFormData({ ...moduleFormData, description: e.target.value })}
+                                rows="3"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                placeholder="Penjelasan singkat tentang modul..."
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Kategori
+                            </label>
+                            <input
+                                type="text"
+                                value={moduleFormData.category}
+                                onChange={(e) => setModuleFormData({ ...moduleFormData, category: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                placeholder="Contoh: Piano Grade 1, Teori Musik"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Tipe Modul <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={moduleFormData.type}
+                                onChange={(e) => setModuleFormData({ ...moduleFormData, type: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                required
+                            >
+                                <option value="link">Link</option>
+                                <option value="file">File</option>
+                                <option value="video">Video</option>
+                            </select>
+                        </div>
+
+                        {moduleFormData.type === 'file' ? (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Upload File <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="file"
+                                    onChange={(e) => setModuleFormData({ ...moduleFormData, file: e.target.files[0] })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                    required
+                                />
+                            </div>
+                        ) : (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Link URL <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="url"
+                                    value={moduleFormData.link}
+                                    onChange={(e) => setModuleFormData({ ...moduleFormData, link: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                    placeholder="https://..."
+                                    required
+                                />
+                            </div>
+                        )}
+
+                        <div className="flex gap-3">
+                            <button
+                                type="submit"
+                                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                            >
+                                Simpan Modul
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowModuleForm(false)}
+                                className="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium rounded-lg transition-colors"
+                            >
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            {/* Form Laporan */}
             {showForm && (
                 <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-4">Laporan Pertemuan Baru</h3>
@@ -347,6 +569,69 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
                 </div>
             )}
 
+            {/* Modul Belajar */}
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <FolderIcon className="w-6 h-6 text-green-600" />
+                    Modul Belajar ({modules.length})
+                </h3>
+                
+                {modules.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                        <FolderIcon className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                        <p>Belum ada modul untuk murid ini</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {modules.map((module) => (
+                            <div
+                                key={module._id}
+                                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                            >
+                                <div className="flex items-start justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                        {getModuleIcon(module.type)}
+                                        <h4 className="font-semibold text-gray-900">{module.title}</h4>
+                                    </div>
+                                    <button
+                                        onClick={() => handleDeleteModule(module._id)}
+                                        className="text-red-500 hover:text-red-700"
+                                    >
+                                        <TrashIcon className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                
+                                {module.description && (
+                                    <p className="text-sm text-gray-600 mb-2">{module.description}</p>
+                                )}
+                                
+                                {module.category && (
+                                    <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full mb-2">
+                                        {module.category}
+                                    </span>
+                                )}
+                                
+                                <div className="mt-3">
+                                    <a
+                                        href={module.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-sm text-blue-600 hover:text-blue-800 underline"
+                                    >
+                                        {module.type === 'file' ? 'Download File' : 'Buka Link'}
+                                    </a>
+                                </div>
+                                
+                                <p className="text-xs text-gray-400 mt-2">
+                                    Ditambahkan: {new Date(module.createdAt).toLocaleDateString('id-ID')}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Riwayat Pertemuan */}
             <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
                     Riwayat Pertemuan ({attendanceHistory.length})
