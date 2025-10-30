@@ -18,8 +18,6 @@ import {
     TrashIcon
 } from '@heroicons/react/24/outline';
 
-const BASE_URL = 'http://localhost:3000/api';
-
 const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
     const { studentId: paramStudentId } = useParams();
     const navigate = useNavigate();
@@ -61,7 +59,7 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
     const fetchStudentData = async () => {
         try {
             setLoading(true);
-            const response = await api.get(`${BASE_URL}/teacher/my-students`);
+            const response = await api.get(`/api/teacher/my-students`);
             
             if (response.data.success) {
                 const assignments = response.data.data;
@@ -86,7 +84,7 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
 
     const fetchAttendanceHistory = async () => {
         try {
-            const response = await api.get(`${BASE_URL}/teacher/student/${studentId}/attendances`);
+            const response = await api.get(`/api/teacher/student/${studentId}/attendances`);
             if (response.data.success) {
                 setAttendanceHistory(response.data.data);
             }
@@ -97,7 +95,7 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
 
     const fetchModules = async () => {
         try {
-            const response = await api.get(`${BASE_URL}/modules/student/${studentId}`);
+            const response = await api.get(`/api/modules/student/${studentId}`);
             if (response.data) {
                 setModules(response.data);
             }
@@ -123,7 +121,7 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
                 formData.append('link', moduleFormData.link);
             }
 
-            const response = await api.post(`${BASE_URL}/modules/teacher/create`, formData, {
+            const response = await api.post(`/api/modules/teacher/create`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
@@ -160,7 +158,7 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
 
         if (result.isConfirmed) {
             try {
-                await api.delete(`${BASE_URL}/modules/${moduleId}`);
+                await api.delete(`/api/modules/${moduleId}`);
                 Swal.fire('Terhapus!', 'Modul berhasil dihapus', 'success');
                 fetchModules();
             } catch (error) {
@@ -192,7 +190,7 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
                 ...formData
             };
             
-            const response = await api.post(`${BASE_URL}/teacher/attendance/create`, payload);
+            const response = await api.post(`/api/teacher/attendance/create`, payload);
             
             if (response.data.success) {
                 Swal.fire('Sukses', 'Laporan pertemuan berhasil disimpan', 'success');

@@ -166,7 +166,7 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
             formDataUpload.append('photo', photoFile);
 
             const response = await api.post(
-                `http://localhost:3000/api/admin/teachers/${teacherId}/upload-photo`,
+                `/api/admin/teachers/${teacherId}/upload-photo`,
                 formDataUpload,
                 {
                     headers: {

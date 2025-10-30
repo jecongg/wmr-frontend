@@ -13,7 +13,6 @@ import {
 } from '@heroicons/react/24/outline';
 import Swal from 'sweetalert2';
 import api from '../../js/services/api';
-const BASE_URL = 'http://localhost:3000/api';
 
 const assignmentSchema = Joi.object({
     teacherId: Joi.string().required().messages({
@@ -71,7 +70,7 @@ const AssignMuridGuru = () => {
     const fetchAssignments = async () => {
         try {
             setLoading(true);
-            const response = await api.get(`${BASE_URL}/admin/assignments?status=${filterStatus}`);
+            const response = await api.get(`/api/admin/assignments?status=${filterStatus}`);
             if (response.data.success) {
                 setAssignments(response.data.data);
             }
@@ -85,8 +84,8 @@ const AssignMuridGuru = () => {
 
     const onSubmit = async (data) => {
         try {
-            const response = await api.post(`${BASE_URL}/admin/assign`, data);
-            
+            const response = await api.post(`/api/admin/assign`, data);
+
             if (response.data.success) {
                 Swal.fire('Sukses', 'Murid berhasil di-assign ke guru', 'success');
                 setShowForm(false);
@@ -113,7 +112,7 @@ const AssignMuridGuru = () => {
 
         if (result.isConfirmed) {
             try {
-                await api.delete(`${BASE_URL}/admin/assignments/${assignmentId}`);
+                await api.delete(`/api/admin/assignments/${assignmentId}`);
                 Swal.fire('Berhasil!', 'Assignment telah dinonaktifkan.', 'success');
                 fetchAssignments();
             } catch (error) {
@@ -125,7 +124,7 @@ const AssignMuridGuru = () => {
 
     const handleUpdateStatus = async (assignmentId, newStatus) => {
         try {
-            await api.put(`${BASE_URL}/admin/assignments/${assignmentId}/status`, { status: newStatus });
+            await api.put(`/api/admin/assignments/${assignmentId}/status`, { status: newStatus });
             Swal.fire('Berhasil!', 'Status assignment berhasil diupdate.', 'success');
             fetchAssignments();
         } catch (error) {

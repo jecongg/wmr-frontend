@@ -56,7 +56,7 @@ const StudentManagement = () => {
 
         if (result.isConfirmed) {
             try {
-                await api.delete(`http://localhost:3000/api/admin/students/${studentId}`);
+                await api.delete(`/api/admin/students/${studentId}`);
                 dispatch(removeStudent(studentId));
                 Swal.fire('Dihapus!', 'Data murid telah berhasil dihapus.', 'success');
             } catch (error) {
@@ -86,7 +86,7 @@ const StudentManagement = () => {
                     return; 
                 }
                 
-                await api.put(`http://localhost:3000/api/admin/students/${studentId}`, studentData);
+                await api.put(`/api/admin/students/${studentId}`, studentData);
                 
                 // PERBAIKAN: Saat update Redux, pastikan KEDUA ID ada
                 dispatch(updateStudent({ 
@@ -108,8 +108,8 @@ const StudentManagement = () => {
                 
             } else {
                 // --- LOGIKA ADD ---
-                const response = await api.post('http://localhost:3000/api/admin/students', studentData);
-                
+                const response = await api.post('/api/admin/students', studentData);
+
                 if (response.data.student) {
                     const newStudent = response.data.student;
                     

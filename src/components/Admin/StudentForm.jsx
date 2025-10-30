@@ -127,7 +127,7 @@ const StudentForm = ({ student, onSave, onPhotoUpdate, onCancel }) => {
             setLoading(true);
             const formData = new FormData();
             formData.append('photo', photoFile);
-            const response = await api.post(`http://localhost:3000/api/admin/students/${studentId}/upload-photo`, formData);
+            const response = await api.post(`/api/admin/students/${studentId}/upload-photo`, formData);
             if(response.status === 200){
                 setFormData(prev => ({ ...prev, photo: response.data.photo }));
                 setPhotoPreview(response.data.photo);

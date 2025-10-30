@@ -55,11 +55,11 @@ const TeacherManagement = () => {
         try {
             let savedTeacher;
             if (editingTeacher) {
-                const response = await api.put(`http://localhost:3000/api/admin/teachers/${editingTeacher.id}`, teacherData);
+                const response = await api.put(`/api/admin/teachers/${editingTeacher.id}`, teacherData);
                 dispatch(updateTeacher({ ...teacherData, id: editingTeacher.id }));
                 savedTeacher = { ...teacherData, id: editingTeacher.id };
             } else {
-                const response = await api.post('http://localhost:3000/api/admin/teachers', teacherData);
+                const response = await api.post('/api/admin/teachers', teacherData);
                 if (response.data.teacher) {
                     dispatch(addTeacher(response.data.teacher));
                     savedTeacher = response.data.teacher;
@@ -90,7 +90,7 @@ const TeacherManagement = () => {
 
         if (result.isConfirmed) {
             try {
-                await api.delete(`http://localhost:3000/api/admin/teachers/${teacherId}`);
+                await api.delete(`/api/admin/teachers/${teacherId}`);
                 dispatch(removeTeacher(teacherId));
                 Swal.fire('Dihapus!', 'Data guru telah berhasil dihapus.', 'success');
             } catch (error) {

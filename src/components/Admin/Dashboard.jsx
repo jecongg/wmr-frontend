@@ -30,7 +30,7 @@ const Dashboard = ({ user }) => {
     const fetchAnnouncements = async () => {
         try {
             setLoading(true);
-            const response = await api.get('http://localhost:3000/api/announcements');
+            const response = await api.get('/api/announcements');
             if (response.data.success) {
                 setAnnouncements(response.data.data);
             }
@@ -47,7 +47,7 @@ const Dashboard = ({ user }) => {
 
         try {
             setSubmitting(true);
-                const response = await api.post('http://localhost:3000/api/announcements', { 
+                const response = await api.post('/api/announcements', { 
                 content: newAnnouncement 
             });
             if (response.data.success) {
@@ -67,7 +67,7 @@ const Dashboard = ({ user }) => {
         if (!confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) return;
 
         try {
-            const response = await api.delete(`http://localhost:3000/api/announcements/${id}`);
+            const response = await api.delete(`/api/announcements/${id}`);
             if (response.data.success) {
                 setAnnouncements(announcements.filter(a => a.id !== id));
             }

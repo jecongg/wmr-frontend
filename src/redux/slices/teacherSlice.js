@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../js/services/api';
 
 export const fetchTeachers = createAsyncThunk('teachers/fetchTeachers', async () => {
-  const response = await api.get('http://localhost:3000/api/admin/list-teachers');
+  const response = await api.get('/api/admin/list-teachers');
   return response.data;
 });
 

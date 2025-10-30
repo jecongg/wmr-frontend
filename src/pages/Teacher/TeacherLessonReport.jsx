@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import api from '../../js/services/api';
 import Swal from 'sweetalert2';
 
-const BASE_URL = 'http://localhost:3000/api';
-
 const TeacherLessonReport = () => {
     const [myStudents, setMyStudents] = useState([]);
     const [loadingStudents, setLoadingStudents] = useState(true);
@@ -27,7 +25,7 @@ const TeacherLessonReport = () => {
     const fetchMyStudents = async () => {
         try {
             setLoadingStudents(true);
-            const response = await api.get(`${BASE_URL}/teacher/my-students`);
+            const response = await api.get(`/api/teacher/my-students`);
             if (response.data.success) {
                 setMyStudents(response.data.data);
             }
