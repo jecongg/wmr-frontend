@@ -1,57 +1,102 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../../firebase"; 
 import api from "../services/api"; 
 
-// Import Redux tools
 import { useDispatch, useSelector } from 'react-redux';
 import { setUser, clearAuth, setAuthLoading, selectAuthStatus } from '../../redux/slices/authSlice';
 
 export const useFirebaseAuth = () => {
     const dispatch = useDispatch();
     const authStatus = useSelector(selectAuthStatus);
+    const tokenRefreshInterval = useRef(null);
 
     useEffect(() => {
+        const setupTokenRefresh = (firebaseUser) => {
+            if (tokenRefreshInterval.current) {
+                clearInterval(tokenRefreshInterval.current);
+            }
+
+            if (firebaseUser) {
+                tokenRefreshInterval.current = setInterval(async () => {
+                    try {
+                        console.log("🔄 Refreshing Firebase token...");
+                        const newToken = await firebaseUser.getIdToken(true); // force refresh
+                        
+                        const response = await api.post('/api/auth/login-with-token', {
+                            idToken: newToken
+                        });
+
+                        if (response.data.success) {
+                            console.log("✅ Token refreshed successfully");
+                            dispatch(setUser(response.data.user));
+                        } else {
+                            console.warn("⚠️ Token refresh failed, logging out...");
+                            await signOut(auth);
+                        }
+                    } catch (error) {
+                        console.error("❌ Error refreshing token:", error);
+                    }
+                }, 50 * 60 * 1000); 
+            }
+        };
+
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             
             if (firebaseUser) {
-                // [PERBAIKAN] Guard Clause dipindahkan ke dalam sini.
-                // Ini HANYA akan mencegah eksekusi ulang jika kita SUDAH berhasil login.
-                // Ini penting untuk mencegah request API berulang kali setelah login berhasil.
                 if (authStatus === 'loading' || authStatus === 'succeeded') {
+                    setupTokenRefresh(firebaseUser);
                     return;
                 }
 
-                // Hanya set loading JIKA kita belum login sebelumnya
                 dispatch(setAuthLoading());
                 try {
-                    const response = await api.post('/api/auth/google-login', {
-                        uid: firebaseUser.uid,
-                        email: firebaseUser.email,
+                    const idToken = await firebaseUser.getIdToken(true); 
+                    
+                    const response = await api.post('/api/auth/login-with-token', {
+                        idToken: idToken
                     });
 
                     if (response.data.success) {
-                        dispatch(setUser(response.data.user)); 
+                        dispatch(setUser(response.data.user));
+                        
+                        setupTokenRefresh(firebaseUser);
                     } else {
+                        console.warn("Backend tidak mengenali user, logout...");
                         await signOut(auth);
-                        // onAuthStateChanged akan terpicu lagi dengan user null, 
-                        // dan blok 'else' di bawah akan menangani clearAuth.
                     }
                 } catch (error) {
-                    console.error("Gagal validasi user di backend:", error.message);
+                    if (error.code === 'ERR_NETWORK') {
+                        console.error("❌ Network Error: Backend tidak dapat dijangkau. Pastikan backend server berjalan di http://localhost:3000");
+                        console.error("💡 Jalankan: cd wmr-backend && npm start");
+                    } else if (error.response) {
+                        console.error("❌ Backend Error:", error.response.status, error.response.data);
+                    } else if (error.request) {
+                        console.error("❌ No Response: Backend tidak merespons. Pastikan backend berjalan.");
+                    } else {
+                        console.error("❌ Error:", error.message);
+                    }
+                    
                     await signOut(auth);
+                    
+                    dispatch(clearAuth());
                 }
             } else {
-                // Jika tidak ada user di Firebase, kita SELALU ingin membersihkan state Redux.
-                // Tidak perlu guard clause di sini. Inilah kunci agar logout berfungsi.
                 dispatch(clearAuth());
+                if (tokenRefreshInterval.current) {
+                    clearInterval(tokenRefreshInterval.current);
+                    tokenRefreshInterval.current = null;
+                }
             }
         });
 
-        // Cleanup function
-        return () => unsubscribe();
+        return () => {
+            unsubscribe();
+            if (tokenRefreshInterval.current) {
+                clearInterval(tokenRefreshInterval.current);
+            }
+        };
 
-    // Dependency array tetap sama, ini sudah benar.
     }, [dispatch, authStatus]); 
 
     const signInWithGoogle = async () => {
@@ -66,7 +111,8 @@ export const useFirebaseAuth = () => {
 
     const signInWithEmail = async (email, password) => {
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            const result = await signInWithEmailAndPassword(auth, email, password);
+            console.log("Email Sign-In Result:", result);
             return { success: true };
         } catch (error) {
             console.error("Email Sign-In Error:", error.code);
@@ -75,10 +121,15 @@ export const useFirebaseAuth = () => {
     };
     
     const logout = async () => {
-        await signOut(auth);
-        // Setelah sign out dari Firebase, onAuthStateChanged akan otomatis terpicu
-        // dan menjalankan dispatch(clearAuth()). Jadi kita tidak perlu dispatch di sini
-        // untuk menghindari dispatch ganda.
+        try {
+            await api.post('/api/auth/logout').catch((error) => {
+                console.warn('Error calling logout endpoint:', error);
+            });
+        } catch (error) {
+            console.error('Error during backend logout:', error);
+        } finally {
+            await signOut(auth);
+        }
     };
     
     return { signInWithGoogle, signInWithEmail, logout }; 

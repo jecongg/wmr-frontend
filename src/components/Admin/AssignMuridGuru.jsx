@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useForm } from 'react-hook-form'; // Import useForm
+import { joiResolver } from '@hookform/resolvers/joi'; // Import the resolver
+import Joi from 'joi'; // Import Joi
 import { selectAllTeachers } from '../../redux/slices/teacherSlice';
 import { selectAllStudents } from '../../redux/slices/studentSlice';
 import { 
@@ -7,11 +10,32 @@ import {
     MagnifyingGlassIcon,
     TrashIcon,
     PencilIcon,
-    UserGroupIcon
 } from '@heroicons/react/24/outline';
 import Swal from 'sweetalert2';
 import api from '../../js/services/api';
 const BASE_URL = 'http://localhost:3000/api';
+
+const assignmentSchema = Joi.object({
+    teacherId: Joi.string().required().messages({
+        'string.empty': 'Guru harus dipilih',
+        'any.required': 'Guru harus dipilih',
+    }),
+    studentId: Joi.string().required().messages({
+        'string.empty': 'Murid harus dipilih',
+        'any.required': 'Murid harus dipilih',
+    }),
+    startDate: Joi.date().iso().required().messages({
+        'any.required': 'Tanggal mulai harus diisi',
+    }),
+    scheduleDay: Joi.string().allow('').optional(),
+    startTime: Joi.string().allow('').optional(),
+    endTime: Joi.string().allow('').optional(),
+    instrument: Joi.string().required().messages({
+        'string.empty': 'Instrumen harus dipilih',
+    }),
+    notes: Joi.string().allow('').optional(),
+});
+
 
 const AssignMuridGuru = () => {
     const teachers = useSelector(selectAllTeachers);
@@ -22,13 +46,19 @@ const AssignMuridGuru = () => {
     const [showForm, setShowForm] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('active');
-    
-    // Form state
-    const [formData, setFormData] = useState({
-        teacherId: '',
-        studentId: '',
-        notes: '',
-        startDate: new Date().toISOString().split('T')[0]
+
+    const { register, handleSubmit, formState: { errors }, reset } = useForm({
+        resolver: joiResolver(assignmentSchema),
+        defaultValues: {
+            teacherId: '',
+            studentId: '',
+            notes: '',
+            startDate: new Date().toISOString().split('T')[0],
+            scheduleDay: '',
+            startTime: '',
+            endTime: '',
+            instrument: ''
+        }
     });
 
     const activeTeachers = teachers.filter(t => !t.deletedAt);
@@ -53,26 +83,14 @@ const AssignMuridGuru = () => {
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        
-        if (!formData.teacherId || !formData.studentId) {
-            Swal.fire('Error', 'Guru dan Murid harus dipilih', 'error');
-            return;
-        }
-
+    const onSubmit = async (data) => {
         try {
-            const response = await api.post(`${BASE_URL}/admin/assign`, formData);
+            const response = await api.post(`${BASE_URL}/admin/assign`, data);
             
             if (response.data.success) {
                 Swal.fire('Sukses', 'Murid berhasil di-assign ke guru', 'success');
                 setShowForm(false);
-                setFormData({
-                    teacherId: '',
-                    studentId: '',
-                    notes: '',
-                    startDate: new Date().toISOString().split('T')[0]
-                });
+                reset(); 
                 fetchAssignments();
             }
         } catch (error) {
@@ -124,32 +142,20 @@ const AssignMuridGuru = () => {
         return teacherName.includes(search) || studentName.includes(search);
     });
 
-    const getTeacherName = (teacherId) => {
-        const teacher = teachers.find(t => t.id === teacherId || t._id === teacherId);
-        return teacher?.name || 'Unknown Teacher';
-    };
-
-    const getStudentName = (studentId) => {
-        const student = students.find(s => s.id === studentId || s._id === studentId);
-        return student?.name || 'Unknown Student';
-    };
-
     if (showForm) {
         return (
             <div className="p-6">
                 <div className="bg-white rounded-lg shadow p-6">
                     <h2 className="text-2xl font-bold mb-6">Assign Murid ke Guru</h2>
                     
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Pilih Guru *
                             </label>
                             <select
-                                value={formData.teacherId}
-                                onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                required
+                                {...register("teacherId")}
+                                className={`w-full px-3 py-2 border ${errors.teacherId ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                             >
                                 <option value="">-- Pilih Guru --</option>
                                 {activeTeachers.map(teacher => (
@@ -158,6 +164,7 @@ const AssignMuridGuru = () => {
                                     </option>
                                 ))}
                             </select>
+                            {errors.teacherId && <p className="text-red-500 text-sm mt-1">{errors.teacherId.message}</p>}
                         </div>
 
                         <div>
@@ -165,10 +172,8 @@ const AssignMuridGuru = () => {
                                 Pilih Murid *
                             </label>
                             <select
-                                value={formData.studentId}
-                                onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                required
+                                {...register("studentId")}
+                                className={`w-full px-3 py-2 border ${errors.studentId ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                             >
                                 <option value="">-- Pilih Murid --</option>
                                 {activeStudents.map(student => (
@@ -177,6 +182,7 @@ const AssignMuridGuru = () => {
                                     </option>
                                 ))}
                             </select>
+                            {errors.studentId && <p className="text-red-500 text-sm mt-1">{errors.studentId.message}</p>}
                         </div>
 
                         <div>
@@ -185,19 +191,74 @@ const AssignMuridGuru = () => {
                             </label>
                             <input
                                 type="date"
-                                value={formData.startDate}
-                                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                {...register("startDate")}
+                                className={`w-full px-3 py-2 border ${errors.startDate ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                             />
+                            {errors.startDate && <p className="text-red-500 text-sm mt-1">{errors.startDate.message}</p>}
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Hari Les
+                            </label>
+                            <select
+                                {...register("scheduleDay")}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                                <option value="">-- Pilih Hari --</option>
+                                <option value="Senin">Senin</option>
+                                <option value="Selasa">Selasa</option>
+                                <option value="Rabu">Rabu</option>
+                                <option value="Kamis">Kamis</option>
+                                <option value="Jumat">Jumat</option>
+                                <option value="Sabtu">Sabtu</option>
+                            </select>
+                        </div>
+
+                        <div className='grid grid-cols-2 gap-4'>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Jam Mulai
+                                </label>
+                                <input
+                                    type="time"
+                                    {...register("startTime")}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Jam Selesai
+                                </label>
+                                <input
+                                    type="time"
+                                    {...register("endTime")}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className='block text-sm font-medium text-gray-700 mb-2'>Instrumen *</label>
+                            <select 
+                                {...register("instrument")}
+                                className={`w-full px-3 py-2 border ${errors.instrument ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}>
+                                <option value="">-- Pilih Instrumen --</option>
+                                <option value="piano">Piano</option>
+                                <option value="gitar">Gitar</option>
+                                <option value="drum">Drum</option>
+                                <option value="vocal">Vocal</option>
+                                <option value="other">Lainnya</option>
+                            </select>
+                            {errors.instrument && <p className="text-red-500 text-sm mt-1">{errors.instrument.message}</p>}
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Catatan
                             </label>
                             <textarea
-                                value={formData.notes}
-                                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                                {...register("notes")}
                                 rows={4}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 placeholder="Tambahkan catatan (opsional)"
@@ -215,12 +276,7 @@ const AssignMuridGuru = () => {
                                 type="button"
                                 onClick={() => {
                                     setShowForm(false);
-                                    setFormData({
-                                        teacherId: '',
-                                        studentId: '',
-                                        notes: '',
-                                        startDate: new Date().toISOString().split('T')[0]
-                                    });
+                                    reset(); 
                                 }}
                                 className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium rounded-lg transition-colors"
                             >
@@ -273,7 +329,7 @@ const AssignMuridGuru = () => {
 
 
             {loading ? (
-                <div className="flex justify-center items-center py-12">
+                 <div className="flex justify-center items-center py-12">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
             ) : (
@@ -288,7 +344,10 @@ const AssignMuridGuru = () => {
                                     Murid
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Tanggal Mulai
+                                    Instrumen
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Jadwal
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
@@ -304,7 +363,7 @@ const AssignMuridGuru = () => {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {filteredAssignments.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                                    <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                                         Tidak ada data assignment
                                     </td>
                                 </tr>
@@ -331,8 +390,18 @@ const AssignMuridGuru = () => {
                                                 </div>
                                             </div>
                                         </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                            <span className="capitalize font-medium">{assignment.instrument || '-'}</span>
+                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {new Date(assignment.startDate).toLocaleDateString('id-ID')}
+                                            {assignment.scheduleDay ? (
+                                                <div>
+                                                    <div className="font-medium">{assignment.scheduleDay}</div>
+                                                    <div className="text-gray-500">{assignment.startTime} - {assignment.endTime}</div>
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400">-</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -386,4 +455,3 @@ const AssignMuridGuru = () => {
 };
 
 export default AssignMuridGuru;
-

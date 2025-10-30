@@ -99,7 +99,7 @@ const TeacherAnnouncements = () => {
                 </div>
             </form>
 
-            {/* Daftar Pengumuman Anda */}
+            {/* Daftar Pengumuman Anda
             <div className="bg-white p-6 rounded-lg shadow-md">
                 <h2 className="text-xl font-bold text-gray-800 mb-4">Pengumuman yang Telah Anda Buat</h2>
                 {status === 'loading' && <p>Memuat...</p>}
@@ -119,7 +119,7 @@ const TeacherAnnouncements = () => {
                         </div>
                     )) : <p className="text-gray-500 text-center">Anda belum membuat pengumuman apapun.</p>}
                 </div>
-            </div>
+            </div> */}
         </div>
     );
 };

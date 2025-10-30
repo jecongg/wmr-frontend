@@ -1,46 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
-// Hook dan State Management
 import { useFirebaseAuth } from '../../js/hooks/useFirebaseAuth';
 import { selectUser } from '../../redux/slices/authSlice';
 import { fetchAnnouncements, selectAllAnnouncements } from '../../redux/slices/announcementSlice';
 import api from '../../js/services/api';
 
-// Komponen Layout dan Ikon
 import Sidebar from '../../components/Layout/Sidebar';
 import { 
     HomeIcon, 
     DocumentTextIcon, 
     FolderIcon, 
     ClockIcon, 
-    SpeakerWaveIcon 
+    SpeakerWaveIcon,
+    UserGroupIcon 
 } from '@heroicons/react/24/outline';
 
-// Komponen Fitur (pastikan path import ini benar)
+
 import TeacherLessonReport from './TeacherLessonReport';
-import TeacherModules from './TeacherModule'; // Perhatikan nama file Anda, mungkin TeacherModules.jsx
+import TeacherModules from './TeacherModule';
 import TeacherReschedule from './TeacherReschedule';
 import TeacherAnnouncements from './TeacherAnnouncements';
+import TeacherStudents from './TeacherStudents';
+import TeacherStudentDetail from './TeacherStudentDetail';
 
 
-// --- KOMPONEN UNTUK HALAMAN UTAMA DASHBOARD (DINAMIS) ---
-const TeacherDashboardHome = () => {
+const TeacherDashboardHome = ({onStudentClick }) => {
     const dispatch = useDispatch();
+    const user = useSelector(selectUser);
     const announcements = useSelector(selectAllAnnouncements);
     const [schedules, setSchedules] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Ambil pengumuman dari Redux
         dispatch(fetchAnnouncements());
-
-        // Ambil jadwal hari ini dari API
         const fetchTodaySchedules = async () => {
             try {
                 const today = new Date().toISOString().split('T')[0];
-                // Ganti endpoint ini jika Anda sudah punya endpoint jadwal yang lebih baik
                 const response = await api.get(`/api/attendance/teacher/schedule?date=${today}`); 
+                console.log(response.data);
                 setSchedules(response.data);
             } catch (error) {
                 console.error("Gagal memuat jadwal hari ini:", error);
@@ -48,76 +46,126 @@ const TeacherDashboardHome = () => {
                 setLoading(false);
             }
         };
-        
         fetchTodaySchedules();
+
+        // const fetchAnnouncements = async () => {
+        //     try {
+        //         await dispatch(fetchAnnouncements());
+        //     } catch (error) {
+        //         console.error("Gagal memuat pengumuman:", error);
+        //     }
+        // }
     }, [dispatch]);
 
     const recentAnnouncements = announcements.slice(0, 2);
 
+    const handleScheduleClick = (student) => {
+        const studentId = student._id || student.id;
+        if (studentId) {
+            onStudentClick(studentId);
+        } else {
+            console.warn("ID murid tidak ditemukan pada jadwal ini.");
+        }
+    };
+    
+
+
+    // const formatted = date.toLocaleString("id-ID", {
+    //     timeZone: "Asia/Jakarta",
+    //     year: "numeric",
+    //     month: "2-digit",
+    //     day: "2-digit",
+    //     hour: "2-digit",
+    //     minute: "2-digit",
+    //     second: "2-digit",
+    // });
+
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
-                <h2 className="text-2xl font-bold text-gray-800 mb-5">Jadwal Anda Hari Ini</h2>
-                {loading ? <p>Memuat jadwal...</p> : (
-                    schedules.length > 0 ? (
-                        <ul className="divide-y divide-gray-200">
-                            {schedules.map((schedule) => (
-                                <li key={schedule.scheduleId} className="py-4">
-                                    <p className="font-semibold text-indigo-700">{schedule.time} - {schedule.lesson}</p>
-                                    <p>Murid: {schedule.students.map(s => s.name).join(', ')}</p>
-                                </li>
+        <>
+            <div className='my-3 mb-6'>
+                <h2 className="text-4xl font-bold text-gray-800 mb-2">Dashboard</h2>
+                <h2 className="text-lg font-medium text-gray-800 mb-2">Welcome Back, {user.name}....</h2>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-5">Jadwal Anda Hari Ini</h2>
+                    {loading ? <p>Memuat jadwal...</p> : (
+                        schedules.length > 0 ? (
+                            <ul className="divide-y divide-gray-200">
+                                {schedules.map((schedule) => (
+                                    <div key={schedule.scheduleId} className="py-4  rounded-md p-5 mb-3 shadow-lg outline outline-black/5">
+                                        <p onClick={() => handleScheduleClick(schedule.students[0])} className="font-semibold text-indigo-700 cursor-pointer">{schedule.time} - {schedule.lesson}</p>
+                                        <p>Murid: {schedule.students.map(s => s.name).join(', ')}</p>
+                                    </div>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-center text-gray-500 py-4">Tidak ada jadwal mengajar hari ini.</p>
+                        )
+                    )}
+                </div>
+                
+                <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-5">Pengumuman Terbaru</h2>
+                    {announcements.length > 0 ? (
+                        <ul className="divide-y divide-gray-200 ">
+                            {announcements.map(ann => (
+                                <div key={ann._id} className="p-3 shadow-lg rounded-md">
+                                    <p className="font-medium text-gray-900 mb-2">{ann.content}</p>
+                                    <p className="text-xs text-gray-500">{new Date(ann.createdAt).toLocaleString("id-ID", {
+                                        timeZone: "Asia/Jakarta",
+                                        day: "2-digit",
+                                        month: "2-digit",
+                                        year: "numeric",
+                                    })}</p>
+                                </div>
                             ))}
                         </ul>
                     ) : (
-                        <p className="text-center text-gray-500 py-4">Tidak ada jadwal mengajar hari ini.</p>
-                    )
-                )}
+                        <p className="text-center text-gray-500 py-4">Tidak ada pengumuman baru.</p>
+                    )}
+                </div>
             </div>
-            
-            <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg">
-                <h2 className="text-2xl font-bold text-gray-800 mb-5">Pengumuman Terbaru</h2>
-                {recentAnnouncements.length > 0 ? (
-                    <ul className="divide-y divide-gray-200">
-                        {recentAnnouncements.map(ann => (
-                            <li key={ann._id} className="py-3">
-                                <p className="font-medium text-gray-900">{ann.title}</p>
-                                <p className="text-xs text-gray-500">Oleh: {ann.createdBy?.name}</p>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className="text-center text-gray-500 py-4">Tidak ada pengumuman baru.</p>
-                )}
-            </div>
-        </div>
+        </>
     );
 };
 
 
-// --- KOMPONEN UTAMA (LAYOUT) ---
 export default function TeacherDashboard() {
     console.log('%c TEACHER DASHBOARD IS RENDERING! ', 'background: #222; color: #bada55');
     
     const [activeComponent, setActiveComponent] = useState('dashboard');
+    const [selectedStudentId, setSelectedStudentId] = useState(null);
     const { logout } = useFirebaseAuth();
-    const user = useSelector(selectUser); // Mengambil data user dari Redux
+    const user = useSelector(selectUser);
 
-    // Menu yang akan ditampilkan di Sidebar
     const menus = [
         { name: 'Dashboard', component: 'dashboard', icon: HomeIcon },
-        { name: 'Buat Laporan Les', component: 'lesson-report', icon: DocumentTextIcon },
+        { name : 'Murid Saya', component: 'students', icon: UserGroupIcon }, 
+        // { name: 'Buat Laporan Les', component: 'lesson-report', icon: DocumentTextIcon },
         { name: 'Modul Belajar', component: 'modules', icon: FolderIcon },
         { name: 'Persetujuan Jadwal', component: 'reschedule', icon: ClockIcon },
-        { name: 'Buat Pengumuman', component: 'announcements', icon: SpeakerWaveIcon },
+        // { name: 'Buat Pengumuman', component: 'announcements', icon: SpeakerWaveIcon },
     ];
 
-    // --- FUNGSI RENDER KONTEN YANG SUDAH DIPERBAIKI ---
+    const showStudentDetail = (studentId) => {
+        setSelectedStudentId(studentId);
+        setActiveComponent('student-detail');
+    };
+
     const renderContent = () => {
         switch (activeComponent) {
             case 'dashboard':
-                return <TeacherDashboardHome />; // Render komponen anak, BUKAN diri sendiri
-            case 'lesson-report':
-                return <TeacherLessonReport />;
+                return <TeacherDashboardHome onStudentClick={showStudentDetail} />;
+            case 'student-detail':
+                return <TeacherStudentDetail 
+                    studentId={selectedStudentId} 
+                    onBackClick={() => setActiveComponent('students')} 
+                />;    
+            case 'students':
+                return <TeacherStudents onStudentClick={showStudentDetail} />;
+            // case 'lesson-report':
+            //     return <TeacherLessonReport />;
             case 'modules':
                 return <TeacherModules />;
             case 'reschedule':
@@ -125,13 +173,15 @@ export default function TeacherDashboard() {
             case 'announcements':
                 return <TeacherAnnouncements />;
             default:
-                return <TeacherDashboardHome />; // Default ke halaman utama dashboard
+                return <TeacherDashboardHome onStudentClick={showStudentDetail} />;
         }
     };
     
-    const activeMenuName = menus.find(menu => menu.component === activeComponent)?.name || 'Dashboard';
+    let activeMenuName = menus.find(menu => menu.component === activeComponent)?.name || 'Dashboard';
+    if(activeComponent === 'student-detail') {
+        activeMenuName = 'Detail Murid';
+    }
 
-    // Menampilkan loading jika data user belum siap
     if (!user) {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -142,22 +192,21 @@ export default function TeacherDashboard() {
 
     return (
         <div className="flex h-screen bg-slate-100">
-            {/* 1. Sidebar */}
+
             <Sidebar 
-                user={user} // Menggunakan data user asli dari Redux
+                user={user}
                 menus={menus}
                 activeComponent={activeComponent}
                 setActiveComponent={setActiveComponent}
                 onLogout={logout}
             />
 
-            {/* 2. Area Konten Utama */}
             <div className="flex-1 flex flex-col overflow-hidden">
-                <header className="bg-white shadow-sm z-10">
+                {/* <header className="bg-white shadow-sm z-10">
                     <div className="px-6 py-4">
                         <h1 className="text-2xl font-semibold text-gray-800">{activeMenuName}</h1>
                     </div>
-                </header>
+                </header> */}
                 <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
                     {renderContent()}
                 </main>

@@ -1,33 +1,38 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { useSelector } from 'react-redux';
-import { selectUser, selectRedirectTarget } from '../../redux/slices/authSlice';
+import { selectUser, selectRedirectTarget, selectAuthStatus } from '../../redux/slices/authSlice';
 import { useFirebaseAuth } from '../../js/hooks/useFirebaseAuth';
 import { useForm } from 'react-hook-form';
 
 export default function LoginPage() {
     const { register, handleSubmit } = useForm();
     const navigate = useNavigate();
+    const location = useLocation();
     const [isLoading, setIsLoading] = useState(false);
 
     const user = useSelector(selectUser);
     const redirectTarget = useSelector(selectRedirectTarget);
+    const authStatus = useSelector(selectAuthStatus);
     const { signInWithGoogle, signInWithEmail } = useFirebaseAuth();
 
     useEffect(() => {
         if (user && redirectTarget) {
+            const from = location.state?.from?.pathname || redirectTarget;
+            
             Swal.fire({
                 title: "Login Berhasil!",
+                text: `Selamat datang, ${user.name || user.email}!`,
                 icon: 'success',
                 timer: 1500,
                 showConfirmButton: false,
                 timerProgressBar: true
             }).then(() => {
-                navigate(redirectTarget, { replace: true });
+                navigate(from, { replace: true });
             });
         }
-    }, [user, redirectTarget, navigate]);
+    }, [user, redirectTarget, navigate, location]);
 
     const handleEmailLogin = async (data) => {
         if (isLoading) return;
@@ -46,14 +51,18 @@ export default function LoginPage() {
                     case 'auth/invalid-credential':
                         errorMessage = 'Password yang Anda masukkan salah.';
                         break;
+                    case 'auth/too-many-requests':
+                        errorMessage = 'Terlalu banyak percobaan login. Silakan coba lagi nanti.';
+                        break;
                     default:
-                        errorMessage = 'Gagal login. Periksa kembali email dan password Anda.';
+                        errorMessage = result.message || 'Gagal login. Periksa kembali email dan password Anda.';
                 }
                 Swal.fire('Login Gagal', errorMessage, 'error');
+                setIsLoading(false);
             }
         } catch (error) {
+            console.error('Login error:', error);
             Swal.fire('Error', 'Terjadi kesalahan yang tidak terduga.', 'error');
-        } finally {
             setIsLoading(false);
         }
     };
@@ -62,10 +71,26 @@ export default function LoginPage() {
         if (isLoading) return;
         setIsLoading(true);
         try {
-            await signInWithGoogle();
+            const result = await signInWithGoogle();
+            
+            if (!result.success) {
+                let errorMessage = 'Terjadi kesalahan saat mencoba login dengan Google.';
+                switch (result.code) {
+                    case 'auth/popup-closed-by-user':
+                        errorMessage = 'Popup login ditutup. Silakan coba lagi.';
+                        break;
+                    case 'auth/cancelled-popup-request':
+                        errorMessage = 'Permintaan login dibatalkan.';
+                        break;
+                    default:
+                        errorMessage = result.error || 'Gagal login dengan Google.';
+                }
+                Swal.fire('Login Gagal', errorMessage, 'error');
+                setIsLoading(false);
+            }
         } catch (error) {
+            console.error('Google login error:', error);
             Swal.fire('Error', 'Terjadi kesalahan saat mencoba login.', 'error');
-        } finally {
             setIsLoading(false);
         }
     };
@@ -92,18 +117,13 @@ export default function LoginPage() {
 
             <div className='relative z-10 w-full max-w-4xl bg-white bg-opacity-90 rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden backdrop-blur-sm'>
                 
-                {/* ========== BAGIAN INI DIUBAH ========== */}
-                {/* Left Section: Gambar Statis */}
                 <div
                     className='hidden md:block md:flex-1 bg-cover bg-center'
                     style={{
-                        // GANTI URL INI dengan gambar Anda sendiri (misal: dari folder assets)
                         backgroundImage: "url('https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=800&q=80')"
                     }}
                 >
-                    {/* Konten dikosongkan, gambar di-handle oleh background CSS */}
                 </div>
-                {/* ======================================= */}
 
 
                 {/* Right Section: Login Form */}

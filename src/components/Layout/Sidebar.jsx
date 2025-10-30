@@ -13,6 +13,7 @@ import { ChevronDownIcon } from 'lucide-react';
 
 const Sidebar = ({ user, menus, activeComponent, setActiveComponent, onLogout }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
     const { logout } = useFirebaseAuth();
     const dispatch = useDispatch();
     const [openDropdown, setOpenDropdown] = useState(null);
@@ -30,6 +31,7 @@ const Sidebar = ({ user, menus, activeComponent, setActiveComponent, onLogout })
             setOpenDropdown(null);
         }
     };
+    
     const handleMenuClick = (menu) => {
         if (menu.submenu) {
             setOpenDropdown(openDropdown === menu.name ? null : menu.name);
@@ -39,6 +41,21 @@ const Sidebar = ({ user, menus, activeComponent, setActiveComponent, onLogout })
         }
     };
 
+    const handleMouseEnter = () => {
+        if (isCollapsed) {
+            setIsHovered(true);
+        }
+    };
+
+    const handleMouseLeave = () => {
+        setIsHovered(false);
+        if (isCollapsed) {
+            setOpenDropdown(null);
+        }
+    };
+
+    const isExpanded = !isCollapsed || isHovered;
+
 
     const handleLogout = () => {
         if (onLogout) {
@@ -46,17 +63,21 @@ const Sidebar = ({ user, menus, activeComponent, setActiveComponent, onLogout })
         }
     }
     return (
-        <div className={`flex flex-shrink-0 h-screen bg-white transition-all duration-300 ${isCollapsed ? 'w-30' : 'w-72'}`}>
+        <div 
+            className={`flex flex-shrink-0 h-screen bg-white transition-all duration-300 ${isExpanded ? 'w-72' : 'w-18'} ${isCollapsed && isHovered ? 'shadow-2xl z-50' : ''}`}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
             <div className="flex flex-col w-full">
                 
-                <div className={`flex items-center justify-between h-24 px-5 bg-yellow-400 ${isCollapsed ? 'py-4' : 'pt-2'}`}>
-                    {!isCollapsed && (
+                <div className={`flex items-center justify-between h-24 px-5 bg-yellow-400 ${isExpanded ? 'pt-2' : 'py-4'}`}>
+                    {isExpanded && (
                         <div className='flex flex-col items-start'>
                             <span className="text-lg font-bold text-white mt-1 whitespace-nowrap">Welcome,</span>
                             <span className="text-sm font-bold text-white mt-1 whitespace-nowrap"> {userData.name}</span>
                         </div>
                     )}
-                     {isCollapsed && (
+                     {!isExpanded && (
                          <div className='rounded-full overflow-hidden w-10 h-10 border-2 border-white shadow-sm'>
                             <span>{userData.name.slice(0,0)}</span>
                         </div>
@@ -75,22 +96,22 @@ const Sidebar = ({ user, menus, activeComponent, setActiveComponent, onLogout })
                             <div key={menu.name}>
                                 <button 
                                     onClick={() => handleMenuClick(menu)}
-                                    title={isCollapsed ? menu.name : ''}
+                                    title={!isExpanded ? menu.name : ''}
                                     className={`w-full flex items-center justify-between px-4 py-3 text-left rounded-lg transition-colors ${
                                         activeComponent === menu.component && !menu.submenu
                                             ? 'bg-yellow-300 text-gray-900 font-semibold' 
                                             : 'text-gray-700 hover:bg-yellow-200'
-                                    } ${isCollapsed ? 'justify-center' : ''}`}
+                                    } ${!isExpanded ? 'justify-center' : ''}`}
                                 >
                                     <div className='flex items-center'>
-                                        {IconComponent && <IconComponent className={`w-6 h-6 text-gray-600 ${!isCollapsed ? 'mr-4' : ''}`} />}
-                                        {!isCollapsed && <span className="whitespace-nowrap">{menu.name}</span>}
+                                        {IconComponent && <IconComponent className={`w-6 h-6 text-gray-600 ${isExpanded ? 'mr-4' : ''}`} />}
+                                        {isExpanded && <span className="whitespace-nowrap">{menu.name}</span>}
                                     </div>
-                                    {!isCollapsed && menu.submenu && (
+                                    {isExpanded && menu.submenu && (
                                         <ChevronDownIcon className={`w-5 h-5 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                                     )}
                                 </button>
-                                {isDropdownOpen && !isCollapsed && (
+                                {isDropdownOpen && isExpanded && (
                                     <div className="pl-8 pt-2 space-y-2">
                                         {menu.submenu.map((submenuItem) => {
                                             const SubMenuIcon = submenuItem.icon;
@@ -116,21 +137,21 @@ const Sidebar = ({ user, menus, activeComponent, setActiveComponent, onLogout })
                     })}
                 </nav>
 
-                <div className="px-3 py-4 border-t border-gray-200">
+                <div className=" px-3 py-4 border-t border-gray-200">
                     <button 
-                        title={isCollapsed ? 'Pengaturan' : ''}
-                        className={`w-full flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg ${isCollapsed ? 'justify-center' : ''}`}
+                        title={!isExpanded ? 'Pengaturan' : ''}
+                        className={`w-full flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg ${!isExpanded ? 'justify-center' : ''}`}
                     >
-                        <Cog6ToothIcon className={`w-6 h-6 text-gray-500 ${!isCollapsed ? 'mr-4' : ''}`} />
-                        {!isCollapsed && 'Pengaturan'}
+                        <Cog6ToothIcon className={`w-6 h-6 text-gray-500 ${isExpanded ? 'mr-4' : ''}`} />
+                        {isExpanded && 'Pengaturan'}
                     </button>
                     <button 
                         onClick={handleLogout}
-                        title={isCollapsed ? 'Logout' : ''}
-                        className={`w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-100 rounded-lg ${isCollapsed ? 'justify-center' : ''}`}
+                        title={!isExpanded ? 'Logout' : ''}
+                        className={`w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-100 rounded-lg ${!isExpanded ? 'justify-center' : ''}`}
                     >
-                        <ArrowLeftOnRectangleIcon className={`w-6 h-6 text-red-500 ${!isCollapsed ? 'mr-4' : ''}`} />
-                        {!isCollapsed && 'Logout'}
+                        <ArrowLeftOnRectangleIcon className={`w-6 h-6 text-red-500 ${isExpanded ? 'mr-4' : ''}`} />
+                        {isExpanded && 'Logout'}
                     </button>
                 </div>
             </div>
