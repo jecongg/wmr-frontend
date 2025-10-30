@@ -44,15 +44,13 @@ const router = createBrowserRouter(
       </Route>
 
       {/* Rute khusus Guru */}
-      <Route >
-        {/* element={<ProtectedRoute allowedRoles={['teacher']} />} */}
+      <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
         <Route path='/teacher/dashboard' element={<TeacherDashboard />} />
         {/* Tambahkan rute guru lainnya di sini, misal: <Route path="/teacher/schedule" ... /> */}
       </Route>
 
       {/* Rute khusus Murid */}
-      <Route >
-        {/* element={<ProtectedRoute allowedRoles={['student']} />} */}
+      <Route element={<ProtectedRoute allowedRoles={['student']} />}>
         <Route path='/student/dashboard' element={<StudentDashboard />} />
       </Route>
     </>
