@@ -12,20 +12,17 @@ export const useFirebaseAuth = () => {
     const authStatus = useSelector(selectAuthStatus);
 
     useEffect(() => {
-        // onAuthStateChanged mengembalikan fungsi 'unsubscribe'
-        // yang akan kita panggil saat komponen di-unmount untuk mencegah memory leak.
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             
-            // Guard Clause (Pencegah Loop):
-            // Jika kita SUDAH dalam proses loading atau SUDAH berhasil login,
-            // JANGAN jalankan logika di bawah lagi.
-            // Ini adalah kunci untuk menghentikan loop.
-            if (authStatus === 'loading' || authStatus === 'succeeded') {
-                return;
-            }
-
             if (firebaseUser) {
-                // Hanya set loading JIKA kita belum login sebelumnya (status 'idle' atau 'failed')
+                // [PERBAIKAN] Guard Clause dipindahkan ke dalam sini.
+                // Ini HANYA akan mencegah eksekusi ulang jika kita SUDAH berhasil login.
+                // Ini penting untuk mencegah request API berulang kali setelah login berhasil.
+                if (authStatus === 'loading' || authStatus === 'succeeded') {
+                    return;
+                }
+
+                // Hanya set loading JIKA kita belum login sebelumnya
                 dispatch(setAuthLoading());
                 try {
                     const response = await api.post('/api/auth/google-login', {
@@ -37,24 +34,24 @@ export const useFirebaseAuth = () => {
                         dispatch(setUser(response.data.user)); 
                     } else {
                         await signOut(auth);
-                        dispatch(clearAuth());
+                        // onAuthStateChanged akan terpicu lagi dengan user null, 
+                        // dan blok 'else' di bawah akan menangani clearAuth.
                     }
                 } catch (error) {
                     console.error("Gagal validasi user di backend:", error.message);
                     await signOut(auth);
-                    dispatch(clearAuth());
                 }
             } else {
-                // Jika tidak ada user di Firebase, pastikan state Redux kita juga bersih
+                // Jika tidak ada user di Firebase, kita SELALU ingin membersihkan state Redux.
+                // Tidak perlu guard clause di sini. Inilah kunci agar logout berfungsi.
                 dispatch(clearAuth());
             }
         });
 
-        // Cleanup function: Jalankan saat hook tidak lagi digunakan
+        // Cleanup function
         return () => unsubscribe();
 
-    // Dependency array: Effect ini HANYA akan dijalankan ulang jika 'dispatch' atau 'authStatus' berubah.
-    // Ini penting untuk memastikan effect berjalan lagi setelah logout (status berubah dari 'succeeded' ke 'failed').
+    // Dependency array tetap sama, ini sudah benar.
     }, [dispatch, authStatus]); 
 
     const signInWithGoogle = async () => {
