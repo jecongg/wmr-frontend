@@ -16,6 +16,7 @@ import TeacherDashboard from './pages/Teacher/TeacherDashboard';
 import TeacherStudentDetail from './pages/Teacher/TeacherStudentDetail';
 import StudentDashboard from './pages/Student/StudentDashboard';
 import RegisterStudent from "./pages/Student/RegisterStudent";
+import ForgotPasswordPage from "./pages/Login/ForgotPasswordPage";
 
 const AppInitializer = () => {
   useFirebaseAuth();
@@ -32,6 +33,7 @@ const router = createBrowserRouter(
         <Route path='/login' element={<LoginPage />} />
         <Route path='/register-teacher' element={<RegisterTeacher />} />
         <Route path='/register-student' element={<RegisterStudent />} />
+        <Route path='/forgot-password' element={<ForgotPasswordPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>

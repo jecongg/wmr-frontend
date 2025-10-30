@@ -1,10 +1,22 @@
 import { useEffect, useRef } from "react";
-import { signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../../firebase"; 
-import api from "../services/api"; 
+import {
+    signOut,
+    onAuthStateChanged,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail,
+} from "firebase/auth";
+import { auth } from "../../../firebase";
+import api from "../services/api";
 
-import { useDispatch, useSelector } from 'react-redux';
-import { setUser, clearAuth, setAuthLoading, selectAuthStatus } from '../../redux/slices/authSlice';
+import { useDispatch, useSelector } from "react-redux";
+import {
+    setUser,
+    clearAuth,
+    setAuthLoading,
+    selectAuthStatus,
+} from "../../redux/slices/authSlice";
 
 export const useFirebaseAuth = () => {
     const dispatch = useDispatch();
@@ -22,63 +34,80 @@ export const useFirebaseAuth = () => {
                     try {
                         console.log("🔄 Refreshing Firebase token...");
                         const newToken = await firebaseUser.getIdToken(true); // force refresh
-                        
-                        const response = await api.post('/api/auth/login-with-token', {
-                            idToken: newToken
-                        });
+
+                        const response = await api.post(
+                            "/api/auth/login-with-token",
+                            {
+                                idToken: newToken,
+                            }
+                        );
 
                         if (response.data.success) {
                             console.log("✅ Token refreshed successfully");
                             dispatch(setUser(response.data.user));
                         } else {
-                            console.warn("⚠️ Token refresh failed, logging out...");
+                            console.warn(
+                                "⚠️ Token refresh failed, logging out..."
+                            );
                             await signOut(auth);
                         }
                     } catch (error) {
                         console.error("❌ Error refreshing token:", error);
                     }
-                }, 50 * 60 * 1000); 
+                }, 50 * 60 * 1000);
             }
         };
 
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            
             if (firebaseUser) {
-                if (authStatus === 'loading' || authStatus === 'succeeded') {
+                if (authStatus === "loading" || authStatus === "succeeded") {
                     setupTokenRefresh(firebaseUser);
                     return;
                 }
 
                 dispatch(setAuthLoading());
                 try {
-                    const idToken = await firebaseUser.getIdToken(true); 
-                    
-                    const response = await api.post('/api/auth/login-with-token', {
-                        idToken: idToken
-                    });
+                    const idToken = await firebaseUser.getIdToken(true);
+
+                    const response = await api.post(
+                        "/api/auth/login-with-token",
+                        {
+                            idToken: idToken,
+                        }
+                    );
 
                     if (response.data.success) {
                         dispatch(setUser(response.data.user));
-                        
+
                         setupTokenRefresh(firebaseUser);
                     } else {
                         console.warn("Backend tidak mengenali user, logout...");
                         await signOut(auth);
                     }
                 } catch (error) {
-                    if (error.code === 'ERR_NETWORK') {
-                        console.error("❌ Network Error: Backend tidak dapat dijangkau. Pastikan backend server berjalan di http://localhost:3000");
-                        console.error("💡 Jalankan: cd wmr-backend && npm start");
+                    if (error.code === "ERR_NETWORK") {
+                        console.error(
+                            "❌ Network Error: Backend tidak dapat dijangkau. Pastikan backend server berjalan di http://localhost:3000"
+                        );
+                        console.error(
+                            "💡 Jalankan: cd wmr-backend && npm start"
+                        );
                     } else if (error.response) {
-                        console.error("❌ Backend Error:", error.response.status, error.response.data);
+                        console.error(
+                            "❌ Backend Error:",
+                            error.response.status,
+                            error.response.data
+                        );
                     } else if (error.request) {
-                        console.error("❌ No Response: Backend tidak merespons. Pastikan backend berjalan.");
+                        console.error(
+                            "❌ No Response: Backend tidak merespons. Pastikan backend berjalan."
+                        );
                     } else {
                         console.error("❌ Error:", error.message);
                     }
-                    
+
                     await signOut(auth);
-                    
+
                     dispatch(clearAuth());
                 }
             } else {
@@ -96,8 +125,18 @@ export const useFirebaseAuth = () => {
                 clearInterval(tokenRefreshInterval.current);
             }
         };
+    }, [dispatch, authStatus]);
 
-    }, [dispatch, authStatus]); 
+    const sendPasswordReset = async (email) => {
+        api.post("/api/auth/forgot-password", { email }).catch((err) => {
+            console.warn(
+                "Silent check for forgot password failed, proceeding with Firebase.",
+                err.response?.data?.message
+            );
+        });
+
+        await sendPasswordResetEmail(auth, email);
+    };
 
     const signInWithGoogle = async () => {
         try {
@@ -111,7 +150,11 @@ export const useFirebaseAuth = () => {
 
     const signInWithEmail = async (email, password) => {
         try {
-            const result = await signInWithEmailAndPassword(auth, email, password);
+            const result = await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
             console.log("Email Sign-In Result:", result);
             return { success: true };
         } catch (error) {
@@ -119,18 +162,18 @@ export const useFirebaseAuth = () => {
             return { success: false, code: error.code };
         }
     };
-    
+
     const logout = async () => {
         try {
-            await api.post('/api/auth/logout').catch((error) => {
-                console.warn('Error calling logout endpoint:', error);
+            await api.post("/api/auth/logout").catch((error) => {
+                console.warn("Error calling logout endpoint:", error);
             });
         } catch (error) {
-            console.error('Error during backend logout:', error);
+            console.error("Error during backend logout:", error);
         } finally {
             await signOut(auth);
         }
     };
-    
-    return { signInWithGoogle, signInWithEmail, logout }; 
+
+    return { signInWithGoogle, signInWithEmail, logout, sendPasswordReset };
 };
