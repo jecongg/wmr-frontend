@@ -9,7 +9,6 @@ import { setUser, clearAuth, setAuthLoading, selectAuthStatus } from '../../redu
 
 export const useFirebaseAuth = () => {
     const dispatch = useDispatch();
-    // Gunakan useSelector untuk mendapatkan status terbaru, ini lebih aman daripada store.getState() di dalam effect
     const authStatus = useSelector(selectAuthStatus);
 
     useEffect(() => {
@@ -29,17 +28,14 @@ export const useFirebaseAuth = () => {
                 // Hanya set loading JIKA kita belum login sebelumnya (status 'idle' atau 'failed')
                 dispatch(setAuthLoading());
                 try {
-                    // Verifikasi user ini ke backend kita
                     const response = await api.post('/api/auth/google-login', {
                         uid: firebaseUser.uid,
                         email: firebaseUser.email,
                     });
 
                     if (response.data.success) {
-                        // Jika backend mengkonfirmasi user ini, set data user di Redux
                         dispatch(setUser(response.data.user)); 
                     } else {
-                        // Jika backend tidak mengenali user ini, logout dari Firebase dan bersihkan state
                         await signOut(auth);
                         dispatch(clearAuth());
                     }
@@ -61,7 +57,6 @@ export const useFirebaseAuth = () => {
     // Ini penting untuk memastikan effect berjalan lagi setelah logout (status berubah dari 'succeeded' ke 'failed').
     }, [dispatch, authStatus]); 
 
-    // Fungsi-fungsi login dan logout (tidak perlu diubah)
     const signInWithGoogle = async () => {
         try {
             const provider = new GoogleAuthProvider();

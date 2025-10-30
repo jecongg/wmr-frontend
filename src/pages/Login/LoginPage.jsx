@@ -72,7 +72,6 @@ export default function LoginPage() {
 
     return (
         <div className='relative w-full h-screen flex items-center justify-center p-4 sm:p-10 overflow-hidden bg-gradient-to-br from-purple-800 via-indigo-900 to-blue-800'>
-            {/* Background musical notes animation */}
             <div className="absolute inset-0 overflow-hidden">
                 {[...Array(20)].map((_, i) => (
                     <span
