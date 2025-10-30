@@ -26,7 +26,7 @@ const StudentReportHistory = () => {
 
     return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Riwayat Laporan Belajar</h1>
+            {/* <h1 className="text-2xl font-bold text-gray-900 mb-6">Riwayat Laporan Belajar</h1> */}
             
             {/* Tampilkan modal/detail jika ada 'selectedReport' */}
 

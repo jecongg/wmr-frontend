@@ -5,11 +5,14 @@ import api from "../services/api";
 
 import { useDispatch, useSelector } from 'react-redux';
 import { setUser, clearAuth, setAuthLoading, selectAuthStatus } from '../../redux/slices/authSlice';
+import { useToast } from '../context/ToastContext';
 
 export const useFirebaseAuth = () => {
     const dispatch = useDispatch();
     const authStatus = useSelector(selectAuthStatus);
     const tokenRefreshInterval = useRef(null);
+    const { showToast } = useToast();
+    const toastShownRef = useRef(false);
 
     useEffect(() => {
         const setupTokenRefresh = (firebaseUser) => {
@@ -66,6 +69,23 @@ export const useFirebaseAuth = () => {
                         await signOut(auth);
                     }
                 } catch (error) {
+                    if (error.response?.status === 403) {
+                        const message = error.response.data?.message || 'Akun Anda tidak aktif. Silakan hubungi administrator.';
+                        
+                        if (!toastShownRef.current) {
+                            showToast(message, 'error', 6000);
+                            toastShownRef.current = true;
+                            
+                            setTimeout(() => {
+                                toastShownRef.current = false;
+                            }, 7000);
+                        }
+                        
+                        await signOut(auth);
+                        dispatch(clearAuth());
+                        return;
+                    }
+
                     if (error.code === 'ERR_NETWORK') {
                         console.error("❌ Network Error: Backend tidak dapat dijangkau. Pastikan backend server berjalan di http://localhost:3000");
                         console.error("💡 Jalankan: cd wmr-backend && npm start");

@@ -30,6 +30,7 @@ const StudentManagement = () => {
     const [editingStudent, setEditingStudent] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterLevel, setFilterLevel] = useState('');
+    const [selectedId, setSelectedId] = useState(null);
 
     const handleAddStudent = () => {
         setEditingStudent(null);
@@ -37,6 +38,7 @@ const StudentManagement = () => {
     };
 
     const handleEditStudent = (student) => {
+        setSelectedId(student.id);
         setEditingStudent(student);
         setShowForm(true);
         
@@ -66,6 +68,40 @@ const StudentManagement = () => {
         }
     };
 
+    const handleToggleStatus = async (student) => {
+        const newStatus = student.status === 'active' ? 'inactive' : 'active';
+        const actionText = newStatus === 'inactive' ? 'nonaktifkan' : 'aktifkan';
+        
+        const result = await Swal.fire({
+            title: `${actionText.charAt(0).toUpperCase() + actionText.slice(1)} Murid?`,
+            text: `Apakah Anda yakin ingin ${actionText} ${student.name}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: newStatus === 'inactive' ? '#d33' : '#3085d6',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: `Ya, ${actionText}!`,
+            cancelButtonText: 'Batal'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await api.put(`/api/admin/students/${student.id}`, { 
+                    ...student,
+                    status: newStatus 
+                });
+                dispatch(updateStudent({ ...student, status: newStatus }));
+                Swal.fire(
+                    'Berhasil!', 
+                    `Murid ${student.name} telah ${newStatus === 'inactive' ? 'dinonaktifkan' : 'diaktifkan'}.`, 
+                    'success'
+                );
+            } catch (error) {
+                console.error('Error toggling student status:', error);
+                Swal.fire('Gagal', 'Terjadi kesalahan saat mengubah status murid.', 'error');
+            }
+        }
+    };
+
     const filteredStudents = students.filter(student =>{
         if(student.deletedAt === null){
             return true;
@@ -76,10 +112,8 @@ const StudentManagement = () => {
     const handleSaveStudent = async (studentData) => {
         try {
             if (editingStudent) {
-                // --- LOGIKA EDIT ---
                 
-                // PERBAIKAN: Ambil ID baik dari ._id atau .id
-                const studentId = editingStudent._id || editingStudent.id;
+                const studentId = selectedId || editingStudent._id || editingStudent.id;
 
                 if (!studentId) {
                     Swal.fire('Error', 'ID Murid tidak ditemukan.', 'error');
@@ -88,11 +122,10 @@ const StudentManagement = () => {
                 
                 await api.put(`/api/admin/students/${studentId}`, studentData);
                 
-                // PERBAIKAN: Saat update Redux, pastikan KEDUA ID ada
                 dispatch(updateStudent({ 
-                    ...editingStudent,  // 1. Ambil semua data lama (termasuk deletedAt: null, status, dll)
-                    ...studentData,       // 2. Timpa dengan data baru dari form (nama, email, dll)
-                    id: studentId,        // 3. Pastikan ID-nya konsisten
+                    ...editingStudent,  
+                    ...studentData,      
+                    id: studentId,        
                     _id: studentId 
                 }));
                 
@@ -105,7 +138,7 @@ const StudentManagement = () => {
 
                 setShowForm(false);
                 setEditingStudent(null);
-                
+                setSelectedId(null);
             } else {
                 // --- LOGIKA ADD ---
                 const response = await api.post('/api/admin/students', studentData);
@@ -221,6 +254,7 @@ const StudentManagement = () => {
                     students={searchStudents}
                     onEdit={handleEditStudent}
                     onDelete={handleDeleteStudent}
+                    onToggleStatus={handleToggleStatus}
                 />
             )}
         </div>

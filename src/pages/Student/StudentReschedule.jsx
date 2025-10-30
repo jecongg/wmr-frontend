@@ -12,29 +12,54 @@ import {
 const StudentReschedule = () => {
     const dispatch = useDispatch();
 
-    // Gunakan Redux untuk mengambil riwayat
     const historyRequests = useSelector(selectRescheduleItems);
     const historyStatus = useSelector(selectRescheduleStatus);
 
-    // State lokal untuk jadwal & form
     const [myAssignments, setMyAssignments] = useState([]);
     const [loadingAssignments, setLoadingAssignments] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Form state
     const [assignmentId, setAssignmentId] = useState("");
     const [originalDate, setOriginalDate] = useState("");
     const [requestedDate, setRequestedDate] = useState("");
     const [requestedTime, setRequestedTime] = useState("");
     const [reason, setReason] = useState("");
+    const [isAutoDate, setIsAutoDate] = useState(true); 
+
+    const getNextScheduleDate = (scheduleDay) => {
+        const dayMap = {
+            'Minggu': 0,
+            'Senin': 1,
+            'Selasa': 2,
+            'Rabu': 3,
+            'Kamis': 4,
+            'Jumat': 5,
+            'Sabtu': 6
+        };
+
+        const today = new Date();
+        const targetDay = dayMap[scheduleDay];
+        
+        if (targetDay === undefined) return '';
+
+        const currentDay = today.getDay();
+        let daysUntilNext = targetDay - currentDay;
+        
+        if (daysUntilNext <= 0) {
+            daysUntilNext += 7;
+        }
+
+        const nextDate = new Date(today);
+        nextDate.setDate(today.getDate() + daysUntilNext);
+
+        return nextDate.toISOString().split('T')[0];
+    };
 
     useEffect(() => {
-        // Ambil riwayat dari Redux
         if (historyStatus === "idle") {
             dispatch(fetchStudentRequests());
         }
 
-        // Ambil jadwal aktif murid
         const fetchAssignments = async () => {
             try {
                 const response = await api.get("/api/assignments/student/me");
@@ -55,6 +80,7 @@ const StudentReschedule = () => {
         setRequestedDate("");
         setRequestedTime("");
         setReason("");
+        setIsAutoDate(true); // Reset ke mode otomatis
     };
 
     const handleSubmit = async (e) => {
@@ -135,7 +161,22 @@ const StudentReschedule = () => {
                         <select
                             id="assignment"
                             value={assignmentId}
-                            onChange={(e) => setAssignmentId(e.target.value)}
+                            onChange={(e) => {
+                                const selectedId = e.target.value;
+                                setAssignmentId(selectedId);
+                                
+                                if (selectedId && isAutoDate) {
+                                    const selectedAssignment = myAssignments.find(
+                                        assign => assign.id === selectedId
+                                    );
+                                    if (selectedAssignment?.scheduleDay) {
+                                        const nextDate = getNextScheduleDate(selectedAssignment.scheduleDay);
+                                        setOriginalDate(nextDate);
+                                    }
+                                } else if (!selectedId) {
+                                    setOriginalDate('');
+                                }
+                            }}
                             disabled={loadingAssignments}
                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
                         >
@@ -153,20 +194,70 @@ const StudentReschedule = () => {
                         </select>
                     </div>
 
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Pertemuan Selanjutnya?
+                                </label>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const newAutoMode = !isAutoDate;
+                                    setIsAutoDate(newAutoMode);
+                                    
+                                    if (newAutoMode && assignmentId) {
+                                        const selectedAssignment = myAssignments.find(
+                                            assign => assign.id === assignmentId
+                                        );
+                                        if (selectedAssignment?.scheduleDay) {
+                                            const nextDate = getNextScheduleDate(selectedAssignment.scheduleDay);
+                                            setOriginalDate(nextDate);
+                                        }
+                                    }
+                                    else if (!newAutoMode) {
+                                        setOriginalDate('');
+                                    }
+                                }}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                                    isAutoDate ? 'bg-indigo-600' : 'bg-gray-300'
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        isAutoDate ? 'translate-x-6' : 'translate-x-1'
+                                    }`}
+                                />
+                            </button>
+                        </div>
+                    </div>
+
                     <div>
                         <label
                             htmlFor="originalDate"
                             className="block text-sm font-medium text-gray-700"
                         >
-                            Tanggal Les Asli
+                            Tanggal Les Asli {isAutoDate ? "(Otomatis)" : ""}
                         </label>
                         <input
                             type="date"
                             id="originalDate"
                             value={originalDate}
                             onChange={(e) => setOriginalDate(e.target.value)}
-                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
+                            readOnly={isAutoDate}
+                            disabled={!assignmentId}
+                            className={`mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm ${
+                                isAutoDate 
+                                    ? 'bg-gray-100 cursor-not-allowed' 
+                                    : 'bg-white'
+                            } ${!assignmentId ? 'opacity-50 cursor-not-allowed' : ''}`}
                         />
+                        <p className="mt-1 text-xs text-gray-500">
+                            {isAutoDate 
+                                ? "Tanggal pertemuan selanjutnya berdasarkan jadwal yang dipilih" 
+                                : "Pilih tanggal les yang ingin diganti"}
+                        </p>
                     </div>
 
                     <div>

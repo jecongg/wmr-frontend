@@ -7,10 +7,12 @@ import {
     MusicalNoteIcon,
     CalendarIcon,
     UserIcon,
-    AcademicCapIcon
+    AcademicCapIcon,
+    LockClosedIcon,
+    LockOpenIcon
 } from '@heroicons/react/24/outline';
 
-const StudentList = ({ students, onEdit, onDelete }) => {
+const StudentList = ({ students, onEdit, onDelete, onToggleStatus }) => {
     if (students.length === 0) {
         return (
             <div className="text-center py-12">
@@ -98,13 +100,34 @@ const StudentList = ({ students, onEdit, onDelete }) => {
                                 Edit
                             </button>
                             <button
-                                onClick={() => onDelete(student.id)}
-                                className="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                                onClick={() => onToggleStatus(student)}
+                                className={`flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                                    student.status === 'active'
+                                        ? 'text-orange-700 bg-orange-50 hover:bg-orange-100'
+                                        : 'text-green-700 bg-green-50 hover:bg-green-100'
+                                }`}
+                                title={student.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'}
                             >
-                                <TrashIcon className="w-4 h-4 mr-1" />
-                                Hapus
+                                {student.status === 'active' ? (
+                                    <>
+                                        <LockClosedIcon className="w-4 h-4 mr-1" />
+                                        Block
+                                    </>
+                                ) : (
+                                    <>
+                                        <LockOpenIcon className="w-4 h-4 mr-1" />
+                                        Aktifkan
+                                    </>
+                                )}
                             </button>
                         </div>
+                        <button
+                            onClick={() => onDelete(student.id)}
+                            className="w-full mt-2 inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                        >
+                            <TrashIcon className="w-4 h-4 mr-1" />
+                            Hapus
+                        </button>
                     </div>
                 </div>
             ))}

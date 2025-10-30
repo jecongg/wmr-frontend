@@ -1,6 +1,7 @@
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from "react-router-dom";
 import { Provider } from 'react-redux';
 import { store } from './redux/store';
+import { ToastProvider } from './js/context/ToastContext';
 
 // Import Hooks & Layouts/Routes
 import { useFirebaseAuth } from "./js/hooks/useFirebaseAuth";
@@ -52,7 +53,9 @@ const router = createBrowserRouter(
 function App() {
   return (
     <Provider store={store}>
-      <AppInitializer />
+      <ToastProvider>
+        <AppInitializer />
+      </ToastProvider>
     </Provider>
   );
 }

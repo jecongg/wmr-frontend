@@ -94,9 +94,19 @@ const TeacherDashboardHome = ({onStudentClick }) => {
                         schedules.length > 0 ? (
                             <ul className="divide-y divide-gray-200">
                                 {schedules.map((schedule) => (
-                                    <div key={schedule.scheduleId} className="py-4  rounded-md p-5 mb-3 shadow-lg outline outline-black/5">
+                                    <div key={schedule.scheduleId} className="py-4 rounded-md p-5 mb-3 shadow-lg outline outline-black/5 relative">
+                                        {schedule.isRescheduled && (
+                                            <span className="absolute top-3 right-3 bg-amber-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                                                Reschedule
+                                            </span>
+                                        )}
                                         <p className="font-semibold text-indigo-700">{schedule.time} - {schedule.lesson}</p>
                                         <p>Murid: {schedule.students.map(s => s.name).join(', ')}</p>
+                                        {schedule.isRescheduled && (
+                                            <p className="text-sm text-amber-600 mt-1">
+                                                ⚠️ Jadwal pengganti (dipindahkan ke hari ini)
+                                            </p>
+                                        )}
                                     </div>
                                 ))}
                             </ul>

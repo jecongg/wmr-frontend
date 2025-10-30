@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
-// Hook dan State Management
 import { useFirebaseAuth } from '../../js/hooks/useFirebaseAuth';
 import { selectUser } from '../../redux/slices/authSlice';
 import { fetchAnnouncements, selectAllAnnouncements } from '../../redux/slices/announcementSlice';
 
-// Komponen Layout dan Ikon
 import Sidebar from '../../components/Layout/Sidebar';
 import { 
     HomeIcon, 
@@ -16,19 +14,19 @@ import {
     CalendarDaysIcon 
 } from '@heroicons/react/24/outline';
 
-// Komponen Fitur (pastikan path import ini benar)
 import StudentReportHistory from './StudentReportHistory';
 import StudentModules from './StudentModules';
 import StudentReschedule from './StudentReschedule';
 import StudentAnnouncements from './StudentAnnouncements';
 import api from '../../js/services/api';
 
-// --- Komponen Internal untuk Halaman Utama Dashboard ---
 const StudentDashboardHome = () => {
     const dispatch = useDispatch();
     const announcements = useSelector(selectAllAnnouncements);
     const [reports, setReports] = useState([]);
+    const [schedules, setSchedules] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingSchedule, setLoadingSchedule] = useState(true);
 
     useEffect(() => {
         dispatch(fetchAnnouncements());
@@ -44,7 +42,20 @@ const StudentDashboardHome = () => {
             }
         };
 
+        const fetchTodaySchedules = async () => {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const response = await api.get(`/api/student/schedule?date=${today}`);
+                setSchedules(response.data);
+            } catch (error) {
+                console.error("Gagal memuat jadwal hari ini:", error);
+            } finally {
+                setLoadingSchedule(false);
+            }
+        };
+
         fetchRecentReports();
+        fetchTodaySchedules();
     }, [dispatch]);
 
     const recentAnnouncements = announcements.slice(0, 2);
@@ -52,6 +63,52 @@ const StudentDashboardHome = () => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
+                <h2 className="text-2xl font-bold text-gray-800 mb-5">Jadwal Les Hari Ini</h2>
+                {loadingSchedule ? <p>Memuat jadwal...</p> : (
+                    schedules.length > 0 ? (
+                        <ul className="divide-y divide-gray-200">
+                            {schedules.map((schedule) => (
+                                <div key={schedule.scheduleId} className="py-4 rounded-md p-5 mb-3 shadow-lg outline outline-black/5 relative">
+                                    {schedule.isRescheduled && (
+                                        <span className="absolute top-3 right-3 bg-amber-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                                            Reschedule
+                                        </span>
+                                    )}
+                                    <p className="font-semibold text-indigo-700">{schedule.time} - {schedule.lesson}</p>
+                                    <p>Guru: {schedule.teacher.name}</p>
+                                    {schedule.isRescheduled && (
+                                        <p className="text-sm text-amber-600 mt-1">
+                                            ⚠️ Jadwal pengganti (dipindahkan ke hari ini)
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-center text-gray-500 py-4">Tidak ada jadwal les hari ini.</p>
+                    )
+                )}
+            </div>
+
+            {/* Pengumuman */}
+            <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg">
+                <h2 className="text-2xl font-bold text-gray-800 mb-5">Pengumuman</h2>
+                {recentAnnouncements.length > 0 ? (
+                    <ul className="divide-y divide-gray-200">
+                        {recentAnnouncements.map(ann => (
+                            <li key={ann._id} className="py-3">
+                                <p className="text-md font-medium text-gray-900">{ann.title}</p>
+                                <p className="text-xs text-gray-500">{new Date(ann.createdAt).toLocaleDateString('id-ID')} - oleh {ann.createdBy?.name}</p>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p className="text-center text-gray-500 py-4">Tidak ada pengumuman baru.</p>
+                )}
+            </div>
+
+            {/* Laporan Belajar Terkini - Pindah ke bawah */}
+            <div className="lg:col-span-3 bg-white p-6 rounded-xl shadow-lg">
                 <h2 className="text-2xl font-bold text-gray-800 mb-5">Laporan Belajar Terkini</h2>
                 {loading ? <p>Memuat laporan...</p> : (
                     reports.length > 0 ? (
@@ -73,21 +130,6 @@ const StudentDashboardHome = () => {
                     ) : (
                         <p className="text-center text-gray-500 py-4">Belum ada laporan belajar yang dipublikasikan.</p>
                     )
-                )}
-            </div>
-            <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg">
-                <h2 className="text-2xl font-bold text-gray-800 mb-5">Pengumuman</h2>
-                {recentAnnouncements.length > 0 ? (
-                    <ul className="divide-y divide-gray-200">
-                        {recentAnnouncements.map(ann => (
-                            <li key={ann._id} className="py-3">
-                                <p className="text-md font-medium text-gray-900">{ann.title}</p>
-                                <p className="text-xs text-gray-500">{new Date(ann.createdAt).toLocaleDateString('id-ID')} - oleh {ann.createdBy?.name}</p>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className="text-center text-gray-500 py-4">Tidak ada pengumuman baru.</p>
                 )}
             </div>
         </div>

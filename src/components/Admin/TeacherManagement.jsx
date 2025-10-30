@@ -100,6 +100,40 @@ const TeacherManagement = () => {
         }
     };
 
+    const handleToggleStatus = async (teacher) => {
+        const newStatus = teacher.status === 'active' ? 'inactive' : 'active';
+        const actionText = newStatus === 'inactive' ? 'nonaktifkan' : 'aktifkan';
+        
+        const result = await Swal.fire({
+            title: `${actionText.charAt(0).toUpperCase() + actionText.slice(1)} Guru?`,
+            text: `Apakah Anda yakin ingin ${actionText} ${teacher.name}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: newStatus === 'inactive' ? '#d33' : '#3085d6',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: `Ya, ${actionText}!`,
+            cancelButtonText: 'Batal'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await api.put(`/api/admin/teachers/${teacher.id}`, { 
+                    ...teacher,
+                    status: newStatus 
+                });
+                dispatch(updateTeacher({ ...teacher, status: newStatus }));
+                Swal.fire(
+                    'Berhasil!', 
+                    `Guru ${teacher.name} telah ${newStatus === 'inactive' ? 'dinonaktifkan' : 'diaktifkan'}.`, 
+                    'success'
+                );
+            } catch (error) {
+                console.error('Error toggling teacher status:', error);
+                Swal.fire('Gagal', 'Terjadi kesalahan saat mengubah status guru.', 'error');
+            }
+        }
+    };
+
     const filteredTeachers = teachers.filter(teacher =>
         (teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
          teacher.email.toLowerCase().includes(searchTerm.toLowerCase())) &&
@@ -168,6 +202,7 @@ const TeacherManagement = () => {
                     teachers={filteredTeachers}
                     onEdit={handleEditTeacher}
                     onDelete={handleDeleteTeacher}
+                    onToggleStatus={handleToggleStatus}
                 />
             )}
         </div>

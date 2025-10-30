@@ -65,6 +65,7 @@ const AssignMuridGuru = () => {
 
     useEffect(() => {
         fetchAssignments();
+        // console.log("activestudent",activeStudents);
     }, [filterStatus]);
 
     const fetchAssignments = async () => {
@@ -84,6 +85,7 @@ const AssignMuridGuru = () => {
 
     const onSubmit = async (data) => {
         try {
+            console.log('Submitting data:', data);
             const response = await api.post(`/api/admin/assign`, data);
 
             if (response.data.success) {
