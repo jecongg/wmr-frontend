@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// 
-// PERHATIAN: Sesuaikan path ini ke lokasi file 'api.js' Anda!
-// Contoh: '../../utils/api', 'src/api/apiService', dll.
-//
+
 import api from '../../js/services/api';
 //
 import { CheckCircleIcon, XCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/solid';

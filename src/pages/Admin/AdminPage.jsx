@@ -7,11 +7,13 @@ import { fetchStudents, selectStudentsStatus } from '../../redux/slices/studentS
 import { MdDashboard, MdSettings, MdWork } from "react-icons/md";
 import { PiStudent } from "react-icons/pi";
 import { FaChalkboardTeacher } from "react-icons/fa";
+import { UserGroupIcon } from "@heroicons/react/24/outline";
 
 import Sidebar from '../../components/Layout/Sidebar';
 import TeacherManagement from '../../components/Admin/TeacherManagement';
 import StudentManagement from '../../components/Admin/StudentManagement';
 import Dashboard from '../../components/Admin/Dashboard';
+import AssignMuridGuru from '../../components/Admin/AssignMuridGuru';
 
 const menus = [
     { name: 'Dashboard', path: '/admin', icon: MdDashboard, component: 'dashboard' },
@@ -22,7 +24,7 @@ const menus = [
         icon: MdSettings, 
         component: 'other', 
         submenu: [
-            { name: 'Sub Menu 1', path: '/admin/other/submenu1', icon: MdWork, component: 'submenu1' },
+            { name: 'Assign Murid ke Guru', path: '/admin/other/assign', icon: UserGroupIcon, component: 'assign' },
             { name: 'Sub Menu 2', path: '/admin/other/submenu2', icon: MdWork, component: 'submenu2' },
         ]
     },
@@ -84,6 +86,8 @@ export default function AdminPage() {
                 return <TeacherManagement />;
             case 'students':
                 return <StudentManagement />;
+            case 'assign':
+                return <AssignMuridGuru />;
             default:
                 return <Dashboard user={user} />;
         }
