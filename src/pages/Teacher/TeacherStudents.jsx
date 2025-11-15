@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../js/services/api';
 import { UserCircleIcon, MagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import Swal from 'sweetalert2';
+import { useWebSocketEvent } from '../../js/hooks/useWebSocket';
+import { useToast } from '../../js/context/ToastContext';
 
 const StudentCard = ({ assignment, onClick }) => {
     const student = assignment.student;
@@ -52,25 +54,44 @@ const TeacherStudents = ({ onStudentClick }) => {
     const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const { showToast } = useToast();
+
+    const fetchStudents = async () => {
+        try {
+            setLoading(true);
+            const response = await api.get(`/api/assignments/teacher/me`);
+
+            if (response.data.success) {
+                setAssignments(response.data.data);
+            }
+            setLoading(false);
+
+        } catch (error) {
+            console.error("Gagal memuat data murid:", error);
+            Swal.fire('Error', 'Gagal memuat data murid', 'error');
+            setLoading(false);
+        }
+    };
+
+    // Listen for real-time student assignment
+    useWebSocketEvent('student-assigned', (data) => {
+        showToast(data.message || 'Murid baru telah di-assign kepada Anda!', 'success');
+        fetchStudents(); 
+    });
+
+    // Listen for assignment updates
+    useWebSocketEvent('assignment-updated', (data) => {
+        showToast(data.message || 'Assignment telah diupdate', 'info');
+        fetchStudents(); 
+    });
+
+    // Listen for assignment deletion
+    useWebSocketEvent('assignment-deleted', (data) => {
+        showToast(data.message || 'Assignment telah dihapus', 'warning');
+        fetchStudents(); 
+    });
 
     useEffect(() => {
-        const fetchStudents = async () => {
-            try {
-                setLoading(true);
-                const response = await api.get(`/api/assignments/teacher/me`);
-
-                if (response.data.success) {
-                    setAssignments(response.data.data);
-                }
-                setLoading(false);
-
-            } catch (error) {
-                console.error("Gagal memuat data murid:", error);
-                Swal.fire('Error', 'Gagal memuat data murid', 'error');
-                setLoading(false);
-            }
-        };
-
         fetchStudents();
     }, []);
 

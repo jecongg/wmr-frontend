@@ -175,7 +175,6 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
                 }
             );
 
-            console.log('Foto berhasil diupload:', response.data.photoUrl);
         } catch (error) {
             console.error('Error uploading photo:', error);
             throw error;
@@ -184,6 +183,7 @@ const TeacherForm = ({ teacher, onSave, onCancel }) => {
 
     return (
         <div className="p-6 max-w-4xl mx-auto">
+            <title>Tambah Guru | Wisma Rapsodi Musik</title>
             <div className="flex items-center mb-6">
                 <button
                     onClick={onCancel}

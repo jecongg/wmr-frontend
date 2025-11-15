@@ -166,6 +166,7 @@ const StudentForm = ({ student, onSave, onPhotoUpdate, onCancel }) => {
 
     return (
         <div className="p-6 max-w-5xl mx-auto">
+            <title>Tambah Murid | Wisma Musik Rapsodi</title>
             <div className="flex items-center mb-6">
                 <button
                     onClick={onCancel}

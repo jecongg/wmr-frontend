@@ -26,6 +26,7 @@ const StudentList = ({ students, onEdit, onDelete, onToggleStatus }) => {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <title>Murid | Wisma Musik Rapsodi</title>
             {students.map((student) => (
                 <div key={student.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                     <div className="relative">
@@ -49,7 +50,6 @@ const StudentList = ({ students, onEdit, onDelete, onToggleStatus }) => {
                     </div>
 
                     <div className="p-4">
-                        {/* Name, Age, and Instrument */}
                         <div className="mb-3">
                             <div className="flex items-center justify-between mb-1">
                                 <h3 className="text-lg font-semibold text-gray-900">{student.name}</h3>

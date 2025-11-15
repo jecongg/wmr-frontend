@@ -86,7 +86,6 @@ const TeacherManagement = () => {
             cancelButtonText: 'Batal'
         });
 
-        console.log('teacherId', teacherId);
 
         if (result.isConfirmed) {
             try {

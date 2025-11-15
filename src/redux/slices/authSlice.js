@@ -13,8 +13,7 @@ const authSlice = createSlice({
     setUser: (state, action) => {
       const userData = action.payload;
       state.user = userData;
-      // console.log(state.user)
-      state.status = 'succeeded'; // Status: Berhasil, user ditemukan
+      state.status = 'succeeded'; 
 
       if (userData) {
         if (userData.role === 'admin') {
@@ -32,13 +31,11 @@ const authSlice = createSlice({
     },
     clearAuth: (state) => {
       state.user = null;
-      // [PERBAIKAN] Ubah 'idle' menjadi 'failed'. 
-      // Ini menandakan "proses otentikasi telah selesai dan gagal menemukan user".
       state.status = 'failed'; 
       state.redirectTarget = null;
     },
     setAuthLoading: (state) => {
-      state.status = 'loading'; // Status: Sedang dalam proses
+      state.status = 'loading'; 
     }
   },
 });

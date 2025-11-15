@@ -27,6 +27,7 @@ const StudentDashboardHome = () => {
     const [schedules, setSchedules] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingSchedule, setLoadingSchedule] = useState(true);
+    
 
     useEffect(() => {
         dispatch(fetchAnnouncements());
@@ -142,6 +143,7 @@ export default function StudentDashboard() {
     const [activeComponent, setActiveComponent] = useState('dashboard');
     const { logout }  = useFirebaseAuth();
     const user = useSelector(selectUser);
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     const menus = [
         { name: 'Dashboard', component: 'dashboard', icon: HomeIcon },
@@ -180,24 +182,21 @@ export default function StudentDashboard() {
     }
 
     return (
-        <div className="flex h-screen bg-slate-100">
-            <Sidebar 
-                user={user}
-                menus={menus}
-                activeComponent={activeComponent}
-                onLogout={logout}
-                setActiveComponent={setActiveComponent}
-            />
-            <div className="flex-1 flex flex-col overflow-hidden">
-                <header className="bg-white shadow-sm z-10">
-                    <div className="px-6 py-4">
-                        <h1 className="text-2xl font-semibold text-gray-800">{activeMenuName}</h1>
-                    </div>
-                </header>
-                <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-                    {renderContent()}
-                </main>
+        <div className='relative min-h-screen bg-gray-100'>
+          <Sidebar 
+            user={user} 
+            menus={menus} 
+            setIsCollapsed={setIsCollapsed} 
+            isCollapsed={isCollapsed}
+            activeComponent={activeComponent}
+            setActiveComponent={setActiveComponent}
+            onLogout={logout} 
+          />
+          <main className={`flex-1 transition-all duration-300 ease-in-out ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
+            <div className='flex-1 p-4 md:p-6'>
+                {renderContent()}
             </div>
+          </main>
         </div>
     );
 }

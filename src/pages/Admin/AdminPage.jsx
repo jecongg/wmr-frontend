@@ -38,17 +38,16 @@ export default function AdminPage() {
     const authStatus = useSelector(selectAuthStatus);
     const teachersStatus = useSelector(selectTeachersStatus);
     const studentsStatus = useSelector(selectStudentsStatus);
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     const [activeComponent, setActiveComponent] = useState('dashboard');
 
     useEffect(() => {
         if (user && user.role === 'admin') {
             if (teachersStatus === 'idle') {
-                console.log('Fetching teachers data...');
                 dispatch(fetchTeachers());
             }
             if (studentsStatus === 'idle') {
-                console.log('Fetching students data...');
                 dispatch(fetchStudents());
             }
         }
@@ -94,16 +93,20 @@ export default function AdminPage() {
     };
 
     return (
-        <div className='flex'>
+        <div className='relative min-h-screen bg-gray-100'>
           <Sidebar 
             user={user} 
             menus={menus} 
+            setIsCollapsed={setIsCollapsed} 
+            isCollapsed={isCollapsed}
             activeComponent={activeComponent}
             setActiveComponent={setActiveComponent}
             onLogout={logout} 
           />
-          <main className='flex-1 bg-gray-100 min-h-screen overflow-y-auto'>
-            {renderActiveComponent()}
+          <main className={`flex-1 transition-all duration-300 ease-in-out ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
+            <div className='flex-1 p-4 md:p-6'>
+                {renderActiveComponent()}
+            </div>
           </main>
         </div>
     );

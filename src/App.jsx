@@ -1,33 +1,27 @@
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from "react-router-dom";
 import { Provider } from 'react-redux';
 import { store } from './redux/store';
-import { ToastProvider } from './js/context/ToastContext';
 
-// Import Hooks & Layouts/Routes
-import { useFirebaseAuth } from "./js/hooks/useFirebaseAuth";
+// Import Layouts & Routes
+import RootLayout from './components/Layout/RootLayout'; // <-- Import RootLayout
 import ProtectedRoute from './components/Layout/ProtectedRoute'; 
 import GuestRoute from './components/Layout/GuestRoute';      
 
-// Import Pages
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/Login/LoginPage';
-import RegisterTeacher from './pages/RegisterTeacher';
-import AdminPage from './pages/Admin/AdminPage';
-import TeacherDashboard from './pages/Teacher/TeacherDashboard'; 
-import TeacherStudentDetail from './pages/Teacher/TeacherStudentDetail';
-import StudentDashboard from './pages/Student/StudentDashboard';
-import RegisterStudent from "./pages/Student/RegisterStudent";
 import ForgotPasswordPage from "./pages/Login/ForgotPasswordPage";
+import RegisterTeacher from "./pages/RegisterTeacher";
+import RegisterStudent from "./pages/Student/RegisterStudent";
+import AdminPage from "./pages/Admin/AdminPage";
+import TeacherDashboard from "./pages/Teacher/TeacherDashboard";
+import StudentDashboard from "./pages/Student/StudentDashboard";
+import { ToastProvider } from "./js/context/ToastContext";
 
-const AppInitializer = () => {
-  useFirebaseAuth();
-  return <RouterProvider router={router} />;
-};
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <>
-      {/* --- RUTE PUBLIK (Bisa diakses semua orang) --- */}
+    <Route path="/" element={<RootLayout />}> 
+      
       <Route index element={<LandingPage />} />
 
       <Route element={<GuestRoute />}>
@@ -48,7 +42,8 @@ const router = createBrowserRouter(
       <Route element={<ProtectedRoute allowedRoles={['student']} />}>
         <Route path='/student/dashboard' element={<StudentDashboard />} />
       </Route>
-    </>
+
+    </Route> 
   )
 );
 
@@ -56,7 +51,7 @@ function App() {
   return (
     <Provider store={store}>
       <ToastProvider>
-        <AppInitializer />
+        <RouterProvider router={router} />
       </ToastProvider>
     </Provider>
   );

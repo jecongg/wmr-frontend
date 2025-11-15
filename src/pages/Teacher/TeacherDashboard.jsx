@@ -6,6 +6,8 @@ import { useFirebaseAuth } from '../../js/hooks/useFirebaseAuth';
 import { selectUser } from '../../redux/slices/authSlice';
 import { fetchAnnouncements, selectAllAnnouncements } from '../../redux/slices/announcementSlice';
 import api from '../../js/services/api';
+import { useWebSocketEvent } from '../../js/hooks/useWebSocket';
+import { useToast } from '../../js/context/ToastContext';
 
 import Sidebar from '../../components/Layout/Sidebar';
 import { 
@@ -32,30 +34,36 @@ const TeacherDashboardHome = ({onStudentClick }) => {
     const announcements = useSelector(selectAllAnnouncements);
     const [schedules, setSchedules] = useState([]);
     const [loading, setLoading] = useState(true);
+    const { showToast } = useToast();
+
+    const fetchTodaySchedules = async () => {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const response = await api.get(`/api/attendance/teacher/schedule?date=${today}`); 
+            setSchedules(response.data);
+        } catch (error) {
+            console.error("Gagal memuat jadwal hari ini:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Listen for new student assignment
+    useWebSocketEvent('student-assigned', (data) => {
+        showToast(data.message || 'Murid baru telah di-assign kepada Anda!', 'success');
+        fetchTodaySchedules(); // Refresh schedule
+    });
+
+    // Listen for assignment updates
+    useWebSocketEvent('assignment-updated', (data) => {
+        showToast(data.message || 'Assignment telah diupdate', 'info');
+        fetchTodaySchedules(); // Refresh schedule
+    });
 
     useEffect(() => {
         dispatch(fetchAnnouncements());
-        const fetchTodaySchedules = async () => {
-            try {
-                const today = new Date().toISOString().split('T')[0];
-                const response = await api.get(`/api/attendance/teacher/schedule?date=${today}`); 
-                console.log(response.data);
-                setSchedules(response.data);
-            } catch (error) {
-                console.error("Gagal memuat jadwal hari ini:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchTodaySchedules();
 
-        // const fetchAnnouncements = async () => {
-        //     try {
-        //         await dispatch(fetchAnnouncements());
-        //     } catch (error) {
-        //         console.error("Gagal memuat pengumuman:", error);
-        //     }
-        // }
     }, [dispatch]);
 
     const recentAnnouncements = announcements.slice(0, 2);
@@ -68,18 +76,6 @@ const TeacherDashboardHome = ({onStudentClick }) => {
             console.warn("ID murid tidak ditemukan pada jadwal ini.");
         }
     };
-    
-
-
-    // const formatted = date.toLocaleString("id-ID", {
-    //     timeZone: "Asia/Jakarta",
-    //     year: "numeric",
-    //     month: "2-digit",
-    //     day: "2-digit",
-    //     hour: "2-digit",
-    //     minute: "2-digit",
-    //     second: "2-digit",
-    // });
 
     return (
         <>
@@ -143,8 +139,6 @@ const TeacherDashboardHome = ({onStudentClick }) => {
 
 
 export default function TeacherDashboard() {
-    console.log('%c TEACHER DASHBOARD IS RENDERING! ', 'background: #222; color: #bada55');
-    
     const navigate = useNavigate();
     const location = useLocation();
     const [selectedStudentId, setSelectedStudentId] = useState(null);
@@ -158,6 +152,8 @@ export default function TeacherDashboard() {
         if (path.includes('/reschedule')) return 'reschedule';
         return 'dashboard';
     };
+    const [isCollapsed, setIsCollapsed] = useState(false);
+
 
     const [activeComponent, setActiveComponent] = useState(getActiveComponentFromPath());
 
@@ -231,26 +227,21 @@ export default function TeacherDashboard() {
     }
 
     return (
-        <div className="flex h-screen bg-slate-100">
-
-            <Sidebar 
-                user={user}
-                menus={menus}
-                activeComponent={activeComponent}
-                setActiveComponent={setActiveComponent}
-                onLogout={logout}
-            />
-
-            <div className="flex-1 flex flex-col overflow-hidden">
-                {/* <header className="bg-white shadow-sm z-10">
-                    <div className="px-6 py-4">
-                        <h1 className="text-2xl font-semibold text-gray-800">{activeMenuName}</h1>
-                    </div>
-                </header> */}
-                <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-                    {renderContent()}
-                </main>
+        <div className='relative min-h-screen bg-gray-100'>
+          <Sidebar 
+            user={user} 
+            menus={menus} 
+            setIsCollapsed={setIsCollapsed} 
+            isCollapsed={isCollapsed}
+            activeComponent={activeComponent}
+            setActiveComponent={setActiveComponent}
+            onLogout={logout} 
+          />
+          <main className={`flex-1 transition-all duration-300 ease-in-out ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
+            <div className='flex-1 p-4 md:p-6'>
+                {renderContent()}
             </div>
+          </main>
         </div>
     );
 }

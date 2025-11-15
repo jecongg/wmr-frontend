@@ -30,7 +30,6 @@ export const useFirebaseAuth = () => {
             if (firebaseUser) {
                 tokenRefreshInterval.current = setInterval(async () => {
                     try {
-                        console.log("🔄 Refreshing Firebase token...");
                         const newToken = await firebaseUser.getIdToken(true); // force refresh
 
                         const response = await api.post(
@@ -41,7 +40,6 @@ export const useFirebaseAuth = () => {
                         );
 
                         if (response.data.success) {
-                            console.log("✅ Token refreshed successfully");
                             dispatch(setUser(response.data.user));
                         } else {
                             console.warn(
@@ -166,7 +164,6 @@ export const useFirebaseAuth = () => {
                 email,
                 password
             );
-            console.log("Email Sign-In Result:", result);
             return { success: true };
         } catch (error) {
             console.error("Email Sign-In Error:", error.code);

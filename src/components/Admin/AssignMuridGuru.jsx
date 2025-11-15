@@ -13,6 +13,8 @@ import {
 } from '@heroicons/react/24/outline';
 import Swal from 'sweetalert2';
 import api from '../../js/services/api';
+import { useWebSocketEvent } from '../../js/hooks/useWebSocket';
+import { useToast } from '../../js/context/ToastContext';
 
 const assignmentSchema = Joi.object({
     teacherId: Joi.string().required().messages({
@@ -39,6 +41,7 @@ const assignmentSchema = Joi.object({
 const AssignMuridGuru = () => {
     const teachers = useSelector(selectAllTeachers);
     const students = useSelector(selectAllStudents);
+    const { showToast } = useToast();
     
     const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -63,9 +66,23 @@ const AssignMuridGuru = () => {
     const activeTeachers = teachers.filter(t => !t.deletedAt);
     const activeStudents = students.filter(s => !s.deletedAt);
 
+    useWebSocketEvent('assignment-created', (data) => {
+        showToast(data.message || 'Assignment baru telah dibuat', 'success');
+        fetchAssignments();
+    });
+
+    useWebSocketEvent('assignment-updated', (data) => {
+        showToast(data.message || 'Assignment telah diupdate', 'info');
+        fetchAssignments();
+    });
+
+    useWebSocketEvent('assignment-deleted', (data) => {
+        showToast(data.message || 'Assignment telah dihapus', 'warning');
+        fetchAssignments();
+    });
+
     useEffect(() => {
         fetchAssignments();
-        // console.log("activestudent",activeStudents);
     }, [filterStatus]);
 
     const fetchAssignments = async () => {
@@ -85,7 +102,6 @@ const AssignMuridGuru = () => {
 
     const onSubmit = async (data) => {
         try {
-            console.log('Submitting data:', data);
             const response = await api.post(`/api/admin/assign`, data);
 
             if (response.data.success) {
@@ -292,6 +308,8 @@ const AssignMuridGuru = () => {
 
     return (
         <div className="p-6">
+            <title>Assign Murid Guru | Wisma Musik Rapsodi</title>
+
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Assign Murid ke Guru</h1>
