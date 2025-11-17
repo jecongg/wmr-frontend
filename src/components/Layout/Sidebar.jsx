@@ -4,7 +4,6 @@ import { ChevronDown, ChevronRight, HelpCircle } from 'lucide-react';
 
 const Logo = ({ isCollapsed }) => (
     <div className={`flex items-center gap-3 h-20 px-4 transition-all duration-300 ${isCollapsed ? 'justify-center' : ''}`}>
-        <img src="/public/logo rhapsody Gold.png" className='w-10 h-10' alt="" />
         <span className={`text-md font-bold text-white transition-opacity duration-200 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100'} `}>
             Wisma Musik Rhapsody
         </span>
@@ -45,15 +44,31 @@ const Sidebar = ({ menus, activeComponent, setActiveComponent, onLogout, isColla
         </button>
     );
 
+    const logout = async() => {
+        try{
+            await signOut(auth);
+        }catch(error){
+            console.error("Logout failed:", error);
+        }
+    }
+
 
     return (
-        <div className={`fixed top-0 left-0 flex flex-col h-screen bg-black text-gray-300 transition-all duration-300 ease-in-out z-40 ${isCollapsed ? 'w-20' : 'w-64'}`}>
-            
-            <ToggleButton />
-            
-            <Logo isCollapsed={isCollapsed} />
+        <>
+        <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar" type="button" class="text-heading bg-transparent box-border border border-transparent hover:bg-neutral-secondary-medium focus:ring-4 focus:ring-neutral-tertiary font-medium leading-5 rounded-base ms-3 mt-3 text-sm p-2 focus:outline-none inline-flex sm:hidden">
+            <span class="sr-only">Open sidebar</span>
+            <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M5 7h14M5 12h14M5 17h10"/>
+            </svg>
+        </button>
 
-            <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
+        <aside id="logo-sidebar" class={`fixed top-0 left-0 flex flex-col h-screen bg-black text-gray-300 transition-all duration-300 ease-in-out z-40 ${isCollapsed ? 'w-20' : 'w-64'}`} aria-label="Sidebar">
+            <ToggleButton />
+            <div class="h-full px-3 py-4 overflow-y-auto bg-black text-white space-y-2 border-e border-default">
+                <a href="" class="flex items-center ps-2.5 mb-5 disabled">
+                    <img src="/public/logo rhapsody Gold.png" className='w-10 h-10 mr-4' alt="" />
+                    <span class={`self-center text-lg text-heading font-semibold ${isCollapsed ? "opacity-0" : "opacity-100"}`}>Wisma Musik Rapsodi</span>
+                </a>
                 {menus.map((menu) => {
                     const IconComponent = menu.icon;
                     const isDropdownOpen = openDropdown === menu.name;
@@ -115,20 +130,16 @@ const Sidebar = ({ menus, activeComponent, setActiveComponent, onLogout, isColla
                         </div>
                     );
                 })}
-            </nav>
-
-            <div className="px-3 py-4 border-t border-gray-800">
-                <button className="flex items-center w-full p-3 border border-gray-700 rounded-lg hover:bg-gray-800">
-                    <HelpCircle className={`flex-shrink-0 w-6 h-6 ${isCollapsed ? 'mx-auto' : ''}`} />
-                    {!isCollapsed && (
-                        <>
-                            <span className="ml-4 font-medium">Support</span>
-                            <ChevronRight className="w-5 h-5 ml-auto" />
-                        </>
-                    )}
+            </div>
+            <div onClick={() => onLogout()} className='px-3 py-4 bg-black text-white border-e border-default transition-transform -translate-x-full sm:translate-x-0'>
+                <button  class="w-full flex items-center px-2 py-1.5 text-body rounded-md hover:bg-gray-300 hover:text-fg-brand group">
+                    <svg class="shrink-0 w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12H4m12 0-4 4m4-4-4-4m3-4h2a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-2"/></svg>
+                    <span class="flex-1 ms-3 whitespace-nowrap">Log Out</span>
                 </button>
             </div>
-        </div>
+        </aside>
+
+        </>
     );
 };
 
