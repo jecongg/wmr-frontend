@@ -40,11 +40,10 @@ const TeacherDashboardHome = ({onStudentClick }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const { showToast } = useToast();
 
-    // const fetchTodaySchedules = async () => {
+    // const fetchTodaySchedulesManual = async () => {
     //     try {
     //         const today = new Date().toISOString().split('T')[0];
     //         const response = await api.get(`/api/attendance/teacher/schedule?date=${today}`); 
-    //         setSchedules(response.data);
     //     } catch (error) {
     //         console.error("Gagal memuat jadwal hari ini:", error);
     //     } finally {
@@ -54,12 +53,27 @@ const TeacherDashboardHome = ({onStudentClick }) => {
 
     useWebSocketEvent('student-assigned', (data) => {
         showToast(data.message || 'Murid baru telah di-assign kepada Anda!', 'success');
-        fetchTodaySchedules(); 
+        dispatch(fetchScheduleforToday());
     });
 
     useWebSocketEvent('assignment-updated', (data) => {
         showToast(data.message || 'Assignment telah diupdate', 'info');
-        fetchTodaySchedules(); 
+        dispatch(fetchScheduleforToday());
+    });
+
+    useWebSocketEvent('assignment-removed', (data) => {
+        showToast(data.message || 'Assignment telah dihapus', 'warning');
+        dispatch(fetchScheduleforToday());
+    });
+
+    useWebSocketEvent('reschedule-approved', (data) => {
+        showToast(data.message || 'Jadwal telah disetujui', 'success');
+        dispatch(fetchScheduleforToday());
+    });
+
+    useWebSocketEvent('reschedule-rejected', (data) => {
+        showToast(data.message || 'Jadwal telah ditolak', 'info');
+        dispatch(fetchScheduleforToday());
     });
 
     useWebSocketEvent('new-announcement', () => {

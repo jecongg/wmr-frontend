@@ -15,6 +15,19 @@ export const fetchReportHistory = createAsyncThunk('students/fetchReportHistory'
   }
 });
 
+
+  export const fetchTodaySchedules = createAsyncThunk('students/fetchTodaySchedule',async (_, {rejectWithValue}) => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const response = await api.get(`/api/student/schedule?date=${today}`);
+        console.log("Schedule response:", response.data);
+        return response.data;
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Gagal memuat schedule');
+    }
+  });
+
+
 export const fetchAttendanceHistory = createAsyncThunk(
   'attendance/fetchHistory',
   async (studentId, { rejectWithValue }) => {
@@ -47,6 +60,8 @@ const initialState = {
   attendancesStatus: 'idle',
   studentAttendanceHistory: [],
   studentAttendanceStatus: 'idle',
+  schedule: [],
+  scheduleStatus: 'idle',
   status: 'idle', 
   error: null,
 };
@@ -120,7 +135,18 @@ const studentSlice = createSlice({
       .addCase(fetchStudentAttendanceHistory.rejected, (state, action) => {
         state.studentAttendanceStatus = 'failed';
         state.error = action.payload;
-      });
+      })
+      .addCase(fetchTodaySchedules.pending, (state) => {
+        state.scheduleStatus = 'loading';
+      })
+      .addCase(fetchTodaySchedules.fulfilled, (state, action) => {
+        state.scheduleStatus = 'succeeded';
+        state.schedule = action.payload;
+      })
+      .addCase(fetchTodaySchedules.rejected, (state, action) => {
+        state.scheduleStatus = 'failed';
+        state.error = action.payload;
+      })
   },
 });
 
@@ -132,6 +158,8 @@ export const selectStudentsError = (state) => state.students.error;
 export const selectAllAttendancesHistory = (state) => state.students.attendancesHistory;
 export const selectStudentAttendanceHistory = (state) => state.students.studentAttendanceHistory;
 export const selectStudentAttendanceStatus = (state) => state.students.studentAttendanceStatus;
+export const selectTodaySchedule = (state) => state.students.schedule;
+export const selectScheduleStatus = (state) => state.students.scheduleStatus;
 
 export default studentSlice.reducer;
 

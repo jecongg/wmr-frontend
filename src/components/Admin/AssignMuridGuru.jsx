@@ -173,7 +173,7 @@ const AssignMuridGuru = () => {
     const onSubmitEdit = async (data) => {
         try {
             const assignmentId = editingAssignment.id || editingAssignment._id;
-            const response = await api.put(`/api/admin/assign/${assignmentId}`, data);
+            const response = await api.put(`/api/admin/assignments/${assignmentId}`, data);
 
             if (response.data.success) {
                 Swal.fire('Sukses', 'Assignment berhasil diupdate', 'success');

@@ -3,13 +3,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { 
     UsersIcon, 
     AcademicCapIcon, 
-    BookOpenIcon,
-    ChartBarIcon,
     MegaphoneIcon,
     PlusIcon,
     TrashIcon
 } from '@heroicons/react/24/outline';
-import api from '../../js/services/api';
 import { selectAllTeachers } from '../../redux/slices/teacherSlice';
 import { selectAllStudents } from '../../redux/slices/studentSlice';
 import { addAnnouncement, deleteAnnouncement, fetchAnnouncements, selectAllAnnouncements, selectAnnouncementsPagination, selectAnnouncementsStatus } from '../../redux/slices/announcementSlice';
@@ -22,7 +19,6 @@ const Dashboard = ({ user }) => {
     
     const announcements = useSelector(selectAllAnnouncements);
     const pagination = useSelector(selectAnnouncementsPagination);
-    const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
 
     const announcementStatus = useSelector(selectAnnouncementsStatus);
@@ -50,36 +46,18 @@ const Dashboard = ({ user }) => {
         dispatch(fetchAnnouncements({ page: currentPage, limit: 5 })); 
     });
 
-    // const fetchAnnouncements = async () => {
-    //     try {
-    //         setLoading(true);
-    //     } catch (error) {
-    //         console.error('Error fetching announcements:', error);
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // };
-
     const handleAddAnnouncement = async (e) => {
         e.preventDefault();
         if (!newAnnouncement.title.trim()) return;
 
         try {
             setSubmitting(true);
-            // const response = await api.post('/api/announcements', { 
-            //     title: newAnnouncement.title,
-            //     content: newAnnouncement.content,
-            //     userId: user.id,
-            // });
-
             dispatch(addAnnouncement(newAnnouncement));
             
             if (announcementStatus === 'succeeded') {
-                setNewAnnouncement('');
+                setNewAnnouncement({ title: "", content: "" });
                 setShowAddForm(false);
             }
-
-            console.log('Announcement created successfully', announcements);
         } catch (error) {
             console.error('Error creating announcement:', error);
             alert('Gagal membuat pengumuman. Silakan coba lagi.');
@@ -93,13 +71,8 @@ const Dashboard = ({ user }) => {
 
         try {
             dispatch(deleteAnnouncement(id));
-
-            if(announcementStatus === 'succeeded') {
-                console.log('Announcement deleted successfully');
-            }
         } catch (error) {
             console.error('Error deleting announcement:', error);
-            alert('Gagal menghapus pengumuman. Silakan coba lagi.');
         }
     };
 
@@ -120,14 +93,12 @@ const Dashboard = ({ user }) => {
             value: teachers.length.toString(),
             icon: UsersIcon,
             color: 'bg-blue-500',
-            changeType: 'positive'
         },
         {
             name: 'Total Murid',
             value: students.length.toString(),
             icon: AcademicCapIcon,
             color: 'bg-green-500',
-            changeType: 'positive'
         },
     ];
 
@@ -164,7 +135,8 @@ const Dashboard = ({ user }) => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    {/* Aktivitas Terbaru */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-[600px]"> {/* Disamakan tingginya jika perlu */}
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Aktivitas Terbaru</h3>
                         <div className="space-y-4">
                             <div className="flex items-center space-x-3">
@@ -182,9 +154,11 @@ const Dashboard = ({ user }) => {
                         </div>
                     </div>
 
-
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <div className="flex justify-between items-center mb-4">
+                    {/* BAGIAN PENGUMUMAN */}
+                    {/* 1. Tambahkan h-[600px] (atau nilai pixel yang diinginkan) */}
+                    {/* 2. Tambahkan flex flex-col */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-[600px] flex flex-col">
+                        <div className="flex justify-between items-center mb-4 shrink-0"> {/* shrink-0 agar header tidak mengecil */}
                             <div className="flex items-center space-x-2">
                                 <MegaphoneIcon className="w-5 h-5 text-indigo-600" />
                                 <h3 className="text-lg font-semibold text-gray-900">Pengumuman</h3>
@@ -199,12 +173,12 @@ const Dashboard = ({ user }) => {
                         </div>
 
                         {showAddForm && (
-                            <form onSubmit={handleAddAnnouncement} className="mb-4">
-                                <textarea
+                            <form onSubmit={handleAddAnnouncement} className="mb-4 shrink-0"> {/* Form tidak boleh kena scroll */}
+                                <input
                                     value={newAnnouncement.title}
                                     onChange={(e) => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
                                     placeholder="Tulis Judul..."
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                                    className="w-full px-3 py-2 mb-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                     disabled={submitting}
                                 />
                                 <textarea
@@ -220,7 +194,7 @@ const Dashboard = ({ user }) => {
                                         type="button"
                                         onClick={() => {
                                             setShowAddForm(false);
-                                            setNewAnnouncement('');
+                                            setNewAnnouncement({ title: "", content: "" });
                                         }}
                                         className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
                                         disabled={submitting}
@@ -238,14 +212,22 @@ const Dashboard = ({ user }) => {
                             </form>
                         )}
 
-                        <div className="space-y-3 max-h-96 overflow-y-auto">
-                                {announcements.map((announcement) => (
+                        {/* List Container */}
+                        {/* 3. Gunakan flex-1 agar mengisi sisa ruang kosong & overflow-y-auto untuk scroll internal */}
+                        <div className="space-y-3 overflow-y-auto flex-1 pr-1">
+                            {announcements.length === 0 ? (
+                                <div className="h-full flex items-center justify-center text-gray-400 text-sm italic">
+                                    Tidak ada pengumuman saat ini
+                                </div>
+                            ) : (
+                                announcements.map((announcement) => (
                                     <div
                                         key={announcement.id}
                                         className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors"
                                     >
                                         <div className="flex justify-between items-start">
                                             <div className="flex-1">
+                                                <p className="font-medium text-gray-900 text-sm mb-1">{announcement.title}</p>
                                                 <p className="text-sm text-gray-800 whitespace-pre-wrap">
                                                     {announcement.content}
                                                 </p>
@@ -262,30 +244,35 @@ const Dashboard = ({ user }) => {
                                             </button>
                                         </div>
                                     </div>
-                                ))}
+                                ))
+                            )}
                         </div>
                         
-                        {pagination.totalPages > 1 && (
-                            <div className="flex justify-center items-center space-x-2 mt-4">
-                                <button
-                                    onClick={() => handlePageChange(currentPage - 1)}
-                                    disabled={currentPage === 1}
-                                    className={`px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
-                                >
-                                    ‹
-                                </button>
-                                <span className="text-sm text-gray-600">
-                                    {pagination.currentPage} dari {pagination.totalPages}
-                                </span>
-                                <button
-                                    onClick={() => handlePageChange(currentPage + 1)}
-                                    disabled={currentPage === pagination.totalPages}
-                                    className={`px-3 py-1 rounded ${currentPage === pagination.totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
-                                >
-                                    ›
-                                </button>
-                            </div>
-                        )}
+                        {/* Pagination */}
+                        {/* shrink-0 agar pagination tetap di bawah dan tidak tergencet */}
+                        <div className="mt-4 pt-2 border-t border-gray-100 shrink-0">
+                            {pagination.totalPages > 1 && (
+                                <div className="flex justify-center items-center space-x-2">
+                                    <button
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className={`px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                                    >
+                                        ‹
+                                    </button>
+                                    <span className="text-sm text-gray-600">
+                                        {pagination.currentPage} dari {pagination.totalPages}
+                                    </span>
+                                    <button
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage === pagination.totalPages}
+                                        className={`px-3 py-1 rounded ${currentPage === pagination.totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                                    >
+                                        ›
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

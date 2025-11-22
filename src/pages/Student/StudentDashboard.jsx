@@ -22,17 +22,32 @@ import StudentAnnouncements from './StudentAnnouncements';
 import StudentAttendanceHistory from './StudentAttendanceHistory';
 import api from '../../js/services/api';
 import { useWebSocketEvent } from '../../js/hooks/useWebSocket';
+import { useToast } from '../../js/context/ToastContext';
 import { MegaphoneIcon, PlusIcon } from 'lucide-react';
+import { fetchTodaySchedules, selectScheduleStatus, selectTodaySchedule } from '../../redux/slices/studentSlice';
 
 const StudentDashboardHome = () => {
     const dispatch = useDispatch();
     const announcements = useSelector(selectAllAnnouncements);
     const pagination = useSelector(selectAnnouncementsPagination);
     const [reports, setReports] = useState([]);
-    const [schedules, setSchedules] = useState([]);
+    const schedules = useSelector(selectTodaySchedule);
+    const scheduleStatus = useSelector(selectScheduleStatus);
     const [loading, setLoading] = useState(true);
-    const [loadingSchedule, setLoadingSchedule] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
+    const { showToast } = useToast();
+
+    // const fetchTodaySchedulesManual = async () => {
+    //         try {
+    //             const today = new Date().toISOString().split('T')[0];
+    //             const response = await api.get(`/api/student/schedule?date=${today}`);
+    //             console.log("Schedule response 2:", response.data);
+    //         } catch (error) {
+    //             console.error("Gagal memuat jadwal hari ini:", error);
+    //         } finally {
+    //             setLoadingSchedule(false);
+    //         }
+    //     };
 
     useWebSocketEvent('new-announcement', () => {
         dispatch(fetchAnnouncements({ page: currentPage, limit: 5 }));
@@ -40,6 +55,31 @@ const StudentDashboardHome = () => {
 
     useWebSocketEvent('announcement-deleted', () => {
         dispatch(fetchAnnouncements({ page: currentPage, limit: 5 })); 
+    });
+
+    useWebSocketEvent('reschedule-approved', (data) => {
+        showToast(data.message || 'Jadwal telah disetujui', 'success');
+        dispatch(fetchTodaySchedules());
+    });
+
+    useWebSocketEvent('reschedule-rejected', (data) => {
+        showToast(data.message || 'Jadwal telah ditolak', 'info');
+        dispatch(fetchTodaySchedules());
+    });
+
+    useWebSocketEvent('student-assigned', (data) => {
+        showToast(data.message || 'Anda telah di-assign ke guru baru!', 'success');
+        dispatch(fetchTodaySchedules());
+    });
+
+    useWebSocketEvent('assignment-updated', (data) => {
+        showToast(data.message || 'Assignment Anda telah diupdate', 'info');
+        dispatch(fetchTodaySchedules());
+    });
+
+    useWebSocketEvent('assignment-removed', (data) => {
+        showToast(data.message || 'Assignment Anda telah dihapus', 'warning');
+        dispatch(fetchTodaySchedules());
     });
     
 
@@ -57,20 +97,9 @@ const StudentDashboardHome = () => {
             }
         };
 
-        const fetchTodaySchedules = async () => {
-            try {
-                const today = new Date().toISOString().split('T')[0];
-                const response = await api.get(`/api/student/schedule?date=${today}`);
-                setSchedules(response.data);
-            } catch (error) {
-                console.error("Gagal memuat jadwal hari ini:", error);
-            } finally {
-                setLoadingSchedule(false);
-            }
-        };
-
         fetchRecentReports();
-        fetchTodaySchedules();
+        // fetchTodaySchedulesManual();
+        dispatch(fetchTodaySchedules());
     }, [dispatch, currentPage]);
 
     const handlePageChange = (newPage) => {
@@ -94,7 +123,7 @@ const StudentDashboardHome = () => {
             <title>Student Dashboard | Wisma Musik Rapsodi</title>
             <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
                 <h2 className="text-2xl font-bold text-gray-800 mb-5">Jadwal Les Hari Ini</h2>
-                {loadingSchedule ? <p>Memuat jadwal...</p> : (
+                {scheduleStatus === 'loading' ? <p>Memuat jadwal...</p> : (
                     schedules.length > 0 ? (
                         <ul className="divide-y divide-gray-200">
                             {schedules.map((schedule) => (

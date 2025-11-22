@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../js/services/api';
 import { DocumentIcon, LinkIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
 import { Card, CardContent } from '@mui/material';
+import useWebSocket, { useWebSocketEvent } from '../../js/hooks/useWebSocket';
 
 const ModuleIcon = ({ type }) => {
     if (type === 'file') return <DocumentIcon className="w-6 h-6 text-blue-500" />;
@@ -10,21 +11,32 @@ const ModuleIcon = ({ type }) => {
     return null;
 };
 
+
+
 const StudentModules = () => {
     const [modules, setModules] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const fetchModules = async () => {
+        try {
+            const response = await api.get('/api/modules');
+            setModules(response.data);
+        } catch (error) {
+            console.error("Gagal memuat modul:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useWebSocketEvent('module-deleted', (data) => {
+        fetchModules();
+    });
+
+    useWebSocketEvent('module-created', (data) => {
+        fetchModules();
+    });
+
     useEffect(() => {
-        const fetchModules = async () => {
-            try {
-                const response = await api.get('/api/modules');
-                setModules(response.data);
-            } catch (error) {
-                console.error("Gagal memuat modul:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchModules();
     }, []);
 

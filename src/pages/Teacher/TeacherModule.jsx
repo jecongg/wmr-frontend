@@ -38,7 +38,7 @@ const TeacherModules = () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             alert('Modul berhasil diunggah!');
-            fetchModules(); // Refresh list
+            fetchModules(); 
         } catch (error) {
             alert('Gagal mengunggah modul.');
         } finally {
@@ -57,7 +57,6 @@ const TeacherModules = () => {
 
             <div>
                  <h2 className="text-xl font-bold mb-4">Daftar Modul Anda</h2>
-                 {/* Map dan tampilkan 'modules' */}
             </div>
         </div>
     );
