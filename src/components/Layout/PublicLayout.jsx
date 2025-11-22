@@ -5,7 +5,7 @@ import { selectUser, selectAuthStatus, selectRedirectTarget } from '../../redux/
 export default function PublicLayout() {
     const user = useSelector(selectUser);
     const authStatus = useSelector(selectAuthStatus);
-    const redirectTarget = useSelector(selectRedirectTarget); // Kita butuh ini untuk tahu ke mana harus redirect
+    const redirectTarget = useSelector(selectRedirectTarget); 
 
     if (authStatus === 'loading' || authStatus === 'idle') {
         return (
@@ -15,13 +15,10 @@ export default function PublicLayout() {
         );
     }
 
-    // Jika pengecekan selesai dan TERNYATA ADA USER,
-    // jangan tampilkan halaman login/register. Langsung redirect ke dashboard mereka.
     if (user) {
         return <Navigate to={redirectTarget || '/'} replace />;
     }
 
-    // Jika tidak ada user, tampilkan halaman publik (Login, Register, Landing Page)
     return (
         <div>
             <main>

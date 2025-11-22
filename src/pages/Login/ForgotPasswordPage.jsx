@@ -15,7 +15,6 @@ export default function ForgotPasswordPage() {
         setIsLoading(true);
 
         try {
-            // Panggil fungsi baru dari hook
             await sendPasswordReset(data.email);
 
             Swal.fire({

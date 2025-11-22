@@ -5,6 +5,8 @@ import { UserCircleIcon, MagnifyingGlassIcon, DocumentTextIcon } from '@heroicon
 import Swal from 'sweetalert2';
 import { useWebSocketEvent } from '../../js/hooks/useWebSocket';
 import { useToast } from '../../js/context/ToastContext';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchTeacherAssignments, selectAllAssignments, selectAssignmentsStatus, selectAssignmentsError } from '../../redux/slices/assignmentSlice';
 
 const StudentCard = ({ assignment, onClick }) => {
     const student = assignment.student;
@@ -16,7 +18,12 @@ const StudentCard = ({ assignment, onClick }) => {
         <div onClick={onClick} className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 cursor-pointer">
             <div className="p-5">
                 <div className="flex items-center gap-4 mb-4">
-                    <UserCircleIcon className="w-14 h-14 text-slate-300" />
+                    {/* <UserCircleIcon className="w-14 h-14 text-slate-300" /> */}
+                    {student.photo ? (
+                        <img src={student.photo} alt={student.name} className="w-14 h-14 rounded-full object-cover" />
+                    ) : (
+                        <UserCircleIcon className="w-14 h-14 text-slate-300" />
+                    )}
                     <div className="flex-1">
                         <h3 className="text-lg font-bold text-gray-800 truncate">{student?.name || 'N/A'}</h3>
                         <p className="text-sm text-gray-500 truncate">{student?.email || 'N/A'}</p>
@@ -51,49 +58,34 @@ const StudentCard = ({ assignment, onClick }) => {
 
 
 const TeacherStudents = ({ onStudentClick }) => {
-    const [assignments, setAssignments] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const { showToast } = useToast();
 
-    const fetchStudents = async () => {
-        try {
-            setLoading(true);
-            const response = await api.get(`/api/assignments/teacher/me`);
+    const dispatch = useDispatch();
+    const assignments = useSelector(selectAllAssignments);
+    const status = useSelector(selectAssignmentsStatus);
+    const error = useSelector(selectAssignmentsError);
+    
+    const loading = status === 'loading' || status === 'idle';
 
-            if (response.data.success) {
-                setAssignments(response.data.data);
-            }
-            setLoading(false);
-
-        } catch (error) {
-            console.error("Gagal memuat data murid:", error);
-            Swal.fire('Error', 'Gagal memuat data murid', 'error');
-            setLoading(false);
-        }
-    };
-
-    // Listen for real-time student assignment
     useWebSocketEvent('student-assigned', (data) => {
-        showToast(data.message || 'Murid baru telah di-assign kepada Anda!', 'success');
-        fetchStudents(); 
+        // showToast(data.message || 'Murid baru telah di-assign kepada Anda!', 'success');
+        dispatch(fetchTeacherAssignments()); 
     });
 
-    // Listen for assignment updates
     useWebSocketEvent('assignment-updated', (data) => {
-        showToast(data.message || 'Assignment telah diupdate', 'info');
-        fetchStudents(); 
+        // showToast(data.message || 'Assignment telah diupdate', 'info');
+        dispatch(fetchTeacherAssignments()); 
     });
 
-    // Listen for assignment deletion
     useWebSocketEvent('assignment-deleted', (data) => {
-        showToast(data.message || 'Assignment telah dihapus', 'warning');
-        fetchStudents(); 
+        // showToast(data.message || 'Assignment telah dihapus', 'warning');
+        dispatch(fetchTeacherAssignments()); 
     });
 
     useEffect(() => {
-        fetchStudents();
-    }, []);
+        dispatch(fetchTeacherAssignments());
+    }, [dispatch]);
 
     const filteredAssignments = assignments.filter(assignment => 
         assignment.student?.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -108,6 +100,7 @@ const TeacherStudents = ({ onStudentClick }) => {
 
     return (
         <div>
+            <title>Murid Saya | Wisma Musik Rapsodi</title>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Daftar Murid Anda</h1>

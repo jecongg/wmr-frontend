@@ -31,13 +31,13 @@ const TeacherReschedule = () => {
 
     return (
         <div className="space-y-4">
+            <title>Izin Pergantian | Wisma Musik Rapsodi</title>
             {loading && <p>Memuat permintaan...</p>}
             {!loading && requests.length === 0 && <p>Tidak ada permintaan ganti jadwal yang tertunda.</p>}
             {requests.map(req => (
                 <div key={req._id} className="bg-white p-4 rounded-lg shadow-md">
                     <p><strong>{req.student.name}</strong> meminta ganti jadwal.</p>
                     <p>Alasan: {req.reason}</p>
-                    {/* Tampilkan detail jadwal asli dan yang diminta */}
                     <div className="mt-4 flex space-x-2">
                         <button onClick={() => handleResponse(req._id, 'approved')} className="px-4 py-2 bg-green-500 text-white rounded">Setujui</button>
                         <button onClick={() => handleResponse(req._id, 'rejected')} className="px-4 py-2 bg-red-500 text-white rounded">Tolak</button>

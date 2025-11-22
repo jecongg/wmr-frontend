@@ -32,6 +32,9 @@ export const useFirebaseAuth = () => {
                     try {
                         const newToken = await firebaseUser.getIdToken(true); // force refresh
 
+                        // Update token in cookie
+                        await api.post('/api/auth/set-token', { idToken: newToken });
+
                         const response = await api.post(
                             "/api/auth/login-with-token",
                             {
@@ -64,6 +67,9 @@ export const useFirebaseAuth = () => {
                 dispatch(setAuthLoading());
                 try {
                     const idToken = await firebaseUser.getIdToken(true);
+
+                    // Store token in cookie
+                    await api.post('/api/auth/set-token', { idToken });
 
                     const response = await api.post(
                         "/api/auth/login-with-token",
@@ -150,7 +156,12 @@ export const useFirebaseAuth = () => {
     const signInWithGoogle = async () => {
         try {
             const provider = new GoogleAuthProvider();
-            await signInWithPopup(auth, provider);
+            const result = await signInWithPopup(auth, provider);
+            
+            // Get ID token and store in cookie
+            const idToken = await result.user.getIdToken();
+            await api.post('/api/auth/set-token', { idToken });
+            
             return { success: true };
         } catch (error) {
             return { success: false, code: error.code, error: error.message };
@@ -164,6 +175,11 @@ export const useFirebaseAuth = () => {
                 email,
                 password
             );
+            
+            // Get ID token and store in cookie
+            const idToken = await result.user.getIdToken();
+            await api.post('/api/auth/set-token', { idToken });
+            
             return { success: true };
         } catch (error) {
             console.error("Email Sign-In Error:", error.code);

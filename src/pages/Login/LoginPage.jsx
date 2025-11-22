@@ -67,6 +67,7 @@ export default function LoginPage() {
                 Swal.fire("Login Gagal", errorMessage, "error");
                 setIsLoading(false);
             }
+
         } catch (error) {
             console.error("Login error:", error);
             Swal.fire(

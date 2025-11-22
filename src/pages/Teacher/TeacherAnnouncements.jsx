@@ -7,9 +7,9 @@ import api from '../../js/services/api';
 import { 
     fetchAnnouncements, 
     addAnnouncement, 
-    removeAnnouncement, 
     selectAllAnnouncements, 
-    selectAnnouncementsStatus 
+    selectAnnouncementsStatus, 
+    deleteAnnouncement
 } from '../../redux/slices/announcementSlice';
 
 const TeacherAnnouncements = () => {
@@ -51,8 +51,8 @@ const TeacherAnnouncements = () => {
     const handleDelete = async (id) => {
         if (!confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) return;
         try {
-            await api.delete(`/api/announcements/${id}`);
-            dispatch(removeAnnouncement(id));
+            // await api.delete(`/api/announcements/${id}`);
+            dispatch(deleteAnnouncement(id));
             alert('Pengumuman berhasil dihapus.');
         } catch (error) {
             alert('Gagal menghapus: ' + (error.response?.data?.message || 'Error'));

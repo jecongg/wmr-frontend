@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 
 import { useFirebaseAuth } from '../../js/hooks/useFirebaseAuth';
 import { selectUser } from '../../redux/slices/authSlice';
-import { fetchAnnouncements, selectAllAnnouncements } from '../../redux/slices/announcementSlice';
+import { fetchAnnouncements, selectAllAnnouncements, selectAnnouncementsPagination } from '../../redux/slices/announcementSlice';
 
 import Sidebar from '../../components/Layout/Sidebar';
 import { 
@@ -11,26 +11,40 @@ import {
     DocumentMagnifyingGlassIcon, 
     FolderIcon, 
     SpeakerWaveIcon, 
-    CalendarDaysIcon 
+    CalendarDaysIcon,
+    ClipboardDocumentCheckIcon 
 } from '@heroicons/react/24/outline';
 
 import StudentReportHistory from './StudentReportHistory';
 import StudentModules from './StudentModules';
 import StudentReschedule from './StudentReschedule';
 import StudentAnnouncements from './StudentAnnouncements';
+import StudentAttendanceHistory from './StudentAttendanceHistory';
 import api from '../../js/services/api';
+import { useWebSocketEvent } from '../../js/hooks/useWebSocket';
+import { MegaphoneIcon, PlusIcon } from 'lucide-react';
 
 const StudentDashboardHome = () => {
     const dispatch = useDispatch();
     const announcements = useSelector(selectAllAnnouncements);
+    const pagination = useSelector(selectAnnouncementsPagination);
     const [reports, setReports] = useState([]);
     const [schedules, setSchedules] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingSchedule, setLoadingSchedule] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    useWebSocketEvent('new-announcement', () => {
+        dispatch(fetchAnnouncements({ page: currentPage, limit: 5 }));
+    });
+
+    useWebSocketEvent('announcement-deleted', () => {
+        dispatch(fetchAnnouncements({ page: currentPage, limit: 5 })); 
+    });
     
 
     useEffect(() => {
-        dispatch(fetchAnnouncements());
+        dispatch(fetchAnnouncements({ page: currentPage, limit: 5 }));
 
         const fetchRecentReports = async () => {
             try {
@@ -57,12 +71,27 @@ const StudentDashboardHome = () => {
 
         fetchRecentReports();
         fetchTodaySchedules();
-    }, [dispatch]);
+    }, [dispatch, currentPage]);
 
-    const recentAnnouncements = announcements.slice(0, 2);
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
+    };
+
+    
+    const formatDate = (dateString) => {
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        return new Date(dateString).toLocaleDateString('id-ID', options);
+    };
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <title>Student Dashboard | Wisma Musik Rapsodi</title>
             <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
                 <h2 className="text-2xl font-bold text-gray-800 mb-5">Jadwal Les Hari Ini</h2>
                 {loadingSchedule ? <p>Memuat jadwal...</p> : (
@@ -92,23 +121,63 @@ const StudentDashboardHome = () => {
             </div>
 
             {/* Pengumuman */}
-            <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg">
-                <h2 className="text-2xl font-bold text-gray-800 mb-5">Pengumuman</h2>
-                {recentAnnouncements.length > 0 ? (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center space-x-2">
+                        <MegaphoneIcon className="w-5 h-5 text-indigo-600" />
+                        <h3 className="text-lg font-semibold text-gray-900">Pengumuman</h3>
+                    </div>
+                </div>
+
+                {announcements.length > 0 ? (
+                    console.log(announcements) ||
                     <ul className="divide-y divide-gray-200">
-                        {recentAnnouncements.map(ann => (
-                            <li key={ann._id} className="py-3">
-                                <p className="text-md font-medium text-gray-900">{ann.title}</p>
-                                <p className="text-xs text-gray-500">{new Date(ann.createdAt).toLocaleDateString('id-ID')} - oleh {ann.createdBy?.name}</p>
-                            </li>
-                        ))}
+                        {announcements.length > 0 ? (
+                            <ul className="divide-y divide-gray-200 space-y-3 ">
+                                {announcements.map(ann => (
+                                    <div key={ann._id} className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors">
+                                        <div className="flex-1">
+                                            <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                                                {ann.content}
+                                            </p>
+                                            <p className="text-xs text-gray-500 mt-2">
+                                                {formatDate(ann.createdAt)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-center text-gray-500 py-4">Tidak ada pengumuman baru.</p>
+                        )}
                     </ul>
                 ) : (
                     <p className="text-center text-gray-500 py-4">Tidak ada pengumuman baru.</p>
                 )}
+                
+                {pagination.totalPages > 1 && (
+                    <div className="flex justify-center items-center space-x-2 mt-4">
+                        <button
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className={`px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                        >
+                            ‹
+                        </button>
+                        <span className="text-sm text-gray-600">
+                            {pagination.currentPage} dari {pagination.totalPages}
+                        </span>
+                        <button
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === pagination.totalPages}
+                            className={`px-3 py-1 rounded ${currentPage === pagination.totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                        >
+                            ›
+                        </button>
+                    </div>
+                )}
             </div>
 
-            {/* Laporan Belajar Terkini - Pindah ke bawah */}
             <div className="lg:col-span-3 bg-white p-6 rounded-xl shadow-lg">
                 <h2 className="text-2xl font-bold text-gray-800 mb-5">Laporan Belajar Terkini</h2>
                 {loading ? <p>Memuat laporan...</p> : (
@@ -138,7 +207,6 @@ const StudentDashboardHome = () => {
 };
 
 
-// --- Komponen Utama Halaman Dashboard Murid ---
 export default function StudentDashboard() {
     const [activeComponent, setActiveComponent] = useState('dashboard');
     const { logout }  = useFirebaseAuth();
@@ -147,21 +215,19 @@ export default function StudentDashboard() {
 
     const menus = [
         { name: 'Dashboard', component: 'dashboard', icon: HomeIcon },
-        { name: 'Riwayat Laporan', component: 'report-history', icon: DocumentMagnifyingGlassIcon },
+        // { name: 'Riwayat Laporan', component: 'report-history', icon: DocumentMagnifyingGlassIcon },
+        { name: 'Riwayat Kehadiran', component: 'attendance-history', icon: ClipboardDocumentCheckIcon },
         { name: 'Modul Belajar', component: 'modules', icon: FolderIcon },
         { name: 'Ajukan Ganti Jadwal', component: 'reschedule', icon: CalendarDaysIcon },
-        { name: 'Semua Pengumuman', component: 'announcements', icon: SpeakerWaveIcon },
     ];
-
-    // =============================================================
-    // =========== INI ADALAH BAGIAN YANG DIPERBAIKI ===============
-    // =============================================================
     const renderContent = () => {
         switch (activeComponent) {
             case 'dashboard':
-                return <StudentDashboardHome />; // Render komponen ANAK, bukan diri sendiri
+                return <StudentDashboardHome />;
             case 'report-history':
                 return <StudentReportHistory />;
+            case 'attendance-history':
+                return <StudentAttendanceHistory />;
             case 'modules':
                 return <StudentModules />;
             case 'reschedule':
@@ -169,11 +235,10 @@ export default function StudentDashboard() {
             case 'announcements':
                 return <StudentAnnouncements />;
             default:
-                return <StudentDashboardHome />; // Default ke komponen anak
+                return <StudentDashboardHome />;
         }
     };
-    // =============================================================
-    // =============================================================
+
     
     const activeMenuName = menus.find(menu => menu.component === activeComponent)?.name || 'Dashboard';
 

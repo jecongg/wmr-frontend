@@ -8,12 +8,10 @@ const AdminRoute = () => {
         return <div className='w-full h-screen flex items-center justify-center'>Loading...</div>;
     }
 
-    // Izinkan akses HANYA jika ada user DAN rolenya adalah 'admin'
     if (user && user.role === 'admin') {
         return <Outlet />;
     }
 
-    // Jika ada user tapi bukan admin, tendang ke halaman lain
     if (user) {
         return <Navigate to="/" replace />; // Arahkan ke landing page
     }

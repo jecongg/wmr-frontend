@@ -6,6 +6,11 @@ export const fetchTeachers = createAsyncThunk('teachers/fetchTeachers', async ()
   return response.data;
 });
 
+export const fetchStudents = createAsyncThunk('teachers/assign/me', async() => {
+  const response = await api.get('/api/assignments/teacher/me');
+  return response.data;
+})
+
 const initialState = {
   items: [],
   status: 'idle',

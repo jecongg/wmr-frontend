@@ -4,7 +4,6 @@ import api from '../../js/services/api';
 //
 import { CheckCircleIcon, XCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/solid';
 
-// Helper untuk format tanggal
 const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('id-ID', {
         day: 'numeric',
@@ -13,7 +12,6 @@ const formatDate = (dateString) => {
     });
 };
 
-// Komponen Ikon Status
 const StatusIcon = ({ status }) => {
     if (status === 'present') {
         return <CheckCircleIcon className="w-6 h-6 text-green-500" />;
@@ -27,7 +25,6 @@ const StatusIcon = ({ status }) => {
     return null;
 };
 
-// Komponen Teks Status
 const StatusText = ({ status }) => {
     if (status === 'present') {
         return <span className="font-medium text-green-600">Hadir</span>;
@@ -50,12 +47,10 @@ const StudentAttendanceHistory = () => {
         const fetchHistory = async () => {
             setLoading(true);
             try {
-                // Asumsi API ini dilindungi oleh auth middleware murid
                 const response = await api.get('/api/attendance/student/history');
                 setHistory(response.data);
             } catch (error) {
                 console.error('Error fetching attendance history:', error);
-                // Tampilkan error jika perlu
             } finally {
                 setLoading(false);
             }

@@ -6,8 +6,47 @@ export const fetchStudents = createAsyncThunk('students/fetchStudents', async ()
   return response.data;
 });
 
+export const fetchReportHistory = createAsyncThunk('students/fetchReportHistory', async ({ rejectWithValue }) => {
+  try {
+    const response = await api.get(`/api/records/student/history`);
+    return response.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Gagal memuat riwayat laporan');
+  }
+});
+
+export const fetchAttendanceHistory = createAsyncThunk(
+  'attendance/fetchHistory',
+  async (studentId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/api/teacher/student/${studentId}/attendances`);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Gagal memuat riwayat kehadiran');
+    }
+  }
+);
+
+export const fetchStudentAttendanceHistory = createAsyncThunk(
+  'students/fetchStudentAttendanceHistory',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/api/attendance/student/history');
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Gagal memuat riwayat kehadiran');
+    }
+  }
+);
+
 const initialState = {
   students: [],
+  reportHistory: [],
+  reportStatus: 'idle',
+  attendancesHistory: [],
+  attendancesStatus: 'idle',
+  studentAttendanceHistory: [],
+  studentAttendanceStatus: 'idle',
   status: 'idle', 
   error: null,
 };
@@ -48,6 +87,39 @@ const studentSlice = createSlice({
       .addCase(fetchStudents.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message;
+      })
+      .addCase(fetchReportHistory.pending, (state) => {
+        state.reportStatus = 'loading';
+      })
+      .addCase(fetchReportHistory.fulfilled, (state, action) => {
+        state.reportStatus = 'succeeded';
+        state.reportHistory = action.payload;
+      })
+      .addCase(fetchReportHistory.rejected, (state, action) => {
+        state.reportStatus = 'failed';
+        state.error = action.payload;
+      })
+      .addCase(fetchAttendanceHistory.pending, (state) => {
+        state.attendancesStatus = 'loading';
+      })
+      .addCase(fetchAttendanceHistory.fulfilled, (state, action) => {
+        state.attendancesStatus = 'succeeded';
+        state.attendancesHistory = action.payload;
+      })
+      .addCase(fetchAttendanceHistory.rejected, (state, action) => {
+        state.attendancesStatus = 'failed';
+        state.error = action.payload;
+      })
+      .addCase(fetchStudentAttendanceHistory.pending, (state) => {
+        state.studentAttendanceStatus = 'loading';
+      })
+      .addCase(fetchStudentAttendanceHistory.fulfilled, (state, action) => {
+        state.studentAttendanceStatus = 'succeeded';
+        state.studentAttendanceHistory = action.payload;
+      })
+      .addCase(fetchStudentAttendanceHistory.rejected, (state, action) => {
+        state.studentAttendanceStatus = 'failed';
+        state.error = action.payload;
       });
   },
 });
@@ -57,6 +129,9 @@ export const { addStudent, updateStudent, updateStudentPhoto, removeStudent } = 
 export const selectAllStudents = (state) => state.students.students;
 export const selectStudentsStatus = (state) => state.students.status;
 export const selectStudentsError = (state) => state.students.error;
+export const selectAllAttendancesHistory = (state) => state.students.attendancesHistory;
+export const selectStudentAttendanceHistory = (state) => state.students.studentAttendanceHistory;
+export const selectStudentAttendanceStatus = (state) => state.students.studentAttendanceStatus;
 
 export default studentSlice.reducer;
 

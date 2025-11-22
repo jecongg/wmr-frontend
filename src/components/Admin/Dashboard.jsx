@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { 
     UsersIcon, 
     AcademicCapIcon, 
@@ -12,13 +12,20 @@ import {
 import api from '../../js/services/api';
 import { selectAllTeachers } from '../../redux/slices/teacherSlice';
 import { selectAllStudents } from '../../redux/slices/studentSlice';
+import { addAnnouncement, deleteAnnouncement, fetchAnnouncements, selectAllAnnouncements, selectAnnouncementsPagination, selectAnnouncementsStatus } from '../../redux/slices/announcementSlice';
+import { useWebSocketEvent } from '../../js/hooks/useWebSocket';
 
 const Dashboard = ({ user }) => {
     const teachers = useSelector(selectAllTeachers);
     const students = useSelector(selectAllStudents);
-
-    const [announcements, setAnnouncements] = useState([]);
+    const dispatch = useDispatch();
+    
+    const announcements = useSelector(selectAllAnnouncements);
+    const pagination = useSelector(selectAnnouncementsPagination);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const announcementStatus = useSelector(selectAnnouncementsStatus);
     const [newAnnouncement, setNewAnnouncement] = useState({
         title: "",
         content: ""
@@ -28,22 +35,30 @@ const Dashboard = ({ user }) => {
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        fetchAnnouncements();
-    }, []);
+        dispatch(fetchAnnouncements({ page: currentPage, limit: 5 }));
+    }, [dispatch, currentPage]);
 
-    const fetchAnnouncements = async () => {
-        try {
-            setLoading(true);
-            const response = await api.get('/api/announcements');
-            if (response.data.success) {
-                setAnnouncements(response.data.data);
-            }
-        } catch (error) {
-            console.error('Error fetching announcements:', error);
-        } finally {
-            setLoading(false);
-        }
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
     };
+
+    useWebSocketEvent('new-announcement', (announcement) => {
+        dispatch(fetchAnnouncements({ page: currentPage, limit: 5 })); 
+    });
+
+    useWebSocketEvent('announcement-deleted', ({ id }) => {
+        dispatch(fetchAnnouncements({ page: currentPage, limit: 5 })); 
+    });
+
+    // const fetchAnnouncements = async () => {
+    //     try {
+    //         setLoading(true);
+    //     } catch (error) {
+    //         console.error('Error fetching announcements:', error);
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
 
     const handleAddAnnouncement = async (e) => {
         e.preventDefault();
@@ -51,16 +66,20 @@ const Dashboard = ({ user }) => {
 
         try {
             setSubmitting(true);
-                const response = await api.post('/api/announcements', { 
-                title: newAnnouncement.title,
-                content: newAnnouncement.content,
-                userId: user.id,
-            });
-            if (response.data.success) {
-                setAnnouncements([response.data.data, ...announcements]);
+            // const response = await api.post('/api/announcements', { 
+            //     title: newAnnouncement.title,
+            //     content: newAnnouncement.content,
+            //     userId: user.id,
+            // });
+
+            dispatch(addAnnouncement(newAnnouncement));
+            
+            if (announcementStatus === 'succeeded') {
                 setNewAnnouncement('');
                 setShowAddForm(false);
             }
+
+            console.log('Announcement created successfully', announcements);
         } catch (error) {
             console.error('Error creating announcement:', error);
             alert('Gagal membuat pengumuman. Silakan coba lagi.');
@@ -73,9 +92,10 @@ const Dashboard = ({ user }) => {
         if (!confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) return;
 
         try {
-            const response = await api.delete(`/api/announcements/${id}`);
-            if (response.data.success) {
-                setAnnouncements(announcements.filter(a => a.id !== id));
+            dispatch(deleteAnnouncement(id));
+
+            if(announcementStatus === 'succeeded') {
+                console.log('Announcement deleted successfully');
             }
         } catch (error) {
             console.error('Error deleting announcement:', error);
@@ -219,17 +239,7 @@ const Dashboard = ({ user }) => {
                         )}
 
                         <div className="space-y-3 max-h-96 overflow-y-auto">
-                            {loading ? (
-                                <div className="text-center py-4">
-                                    <p className="text-sm text-gray-500">Memuat pengumuman...</p>
-                                </div>
-                            ) : announcements.length === 0 ? (
-                                <div className="text-center py-4">
-                                    <MegaphoneIcon className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                                    <p className="text-sm text-gray-500">Belum ada pengumuman</p>
-                                </div>
-                            ) : (
-                                announcements.map((announcement) => (
+                                {announcements.map((announcement) => (
                                     <div
                                         key={announcement.id}
                                         className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors"
@@ -252,9 +262,30 @@ const Dashboard = ({ user }) => {
                                             </button>
                                         </div>
                                     </div>
-                                ))
-                            )}
+                                ))}
                         </div>
+                        
+                        {pagination.totalPages > 1 && (
+                            <div className="flex justify-center items-center space-x-2 mt-4">
+                                <button
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                    className={`px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                                >
+                                    ‹
+                                </button>
+                                <span className="text-sm text-gray-600">
+                                    {pagination.currentPage} dari {pagination.totalPages}
+                                </span>
+                                <button
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === pagination.totalPages}
+                                    className={`px-3 py-1 rounded ${currentPage === pagination.totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                                >
+                                    ›
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

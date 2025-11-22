@@ -10,20 +10,19 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Request Interceptor - Tambahkan token ke setiap request
+// Request Interceptor - No longer need to add token manually (using cookies)
 api.interceptors.request.use(
   async (config) => {
-    const user = auth.currentUser;
-    if (user) {
-      const token = await user.getIdToken();
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // if (config.data instanceof FormData) {
+    //   delete config.headers['Content-Type'];
+    // }
+    
     return config;
   },
   (error) => {
     return Promise.reject(error);
   }
-);
+)
 
 // Response Interceptor - Handle 401 Unauthorized
 let isLoggingOut = false;

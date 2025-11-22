@@ -46,6 +46,8 @@ const AssignMuridGuru = () => {
     const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingAssignment, setEditingAssignment] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('active');
 
@@ -61,6 +63,10 @@ const AssignMuridGuru = () => {
             endTime: '',
             instrument: ''
         }
+    });
+
+    const { register: registerEdit, handleSubmit: handleSubmitEdit, formState: { errors: errorsEdit }, reset: resetEdit, setValue } = useForm({
+        resolver: joiResolver(assignmentSchema),
     });
 
     const activeTeachers = teachers.filter(t => !t.deletedAt);
@@ -148,6 +154,37 @@ const AssignMuridGuru = () => {
         } catch (error) {
             console.error('Error updating status:', error);
             Swal.fire('Error', 'Gagal update status', 'error');
+        }
+    };
+
+    const handleEdit = (assignment) => {
+        setEditingAssignment(assignment);
+        setValue('teacherId', assignment.teacherId?._id || assignment.teacherId?.id || '');
+        setValue('studentId', assignment.studentId?._id || assignment.studentId?.id || '');
+        setValue('startDate', assignment.startDate ? new Date(assignment.startDate).toISOString().split('T')[0] : '');
+        setValue('scheduleDay', assignment.scheduleDay || '');
+        setValue('startTime', assignment.startTime || '');
+        setValue('endTime', assignment.endTime || '');
+        setValue('instrument', assignment.instrument || '');
+        setValue('notes', assignment.notes || '');
+        setShowEditModal(true);
+    };
+
+    const onSubmitEdit = async (data) => {
+        try {
+            const assignmentId = editingAssignment.id || editingAssignment._id;
+            const response = await api.put(`/api/admin/assign/${assignmentId}`, data);
+
+            if (response.data.success) {
+                Swal.fire('Sukses', 'Assignment berhasil diupdate', 'success');
+                setShowEditModal(false);
+                resetEdit();
+                setEditingAssignment(null);
+                fetchAssignments();
+            }
+        } catch (error) {
+            console.error('Error updating assignment:', error);
+            Swal.fire('Error', error.response?.data?.message || 'Gagal update assignment', 'error');
         }
     };
 
@@ -436,23 +473,13 @@ const AssignMuridGuru = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div className="flex gap-2">
-                                                {assignment.status === 'active' ? (
-                                                    <button
-                                                        onClick={() => handleUpdateStatus(assignment.id || assignment._id, 'inactive')}
-                                                        className="text-yellow-600 hover:text-yellow-900"
-                                                        title="Nonaktifkan"
-                                                    >
-                                                        <PencilIcon className="w-5 h-5" />
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => handleUpdateStatus(assignment.id || assignment._id, 'active')}
-                                                        className="text-green-600 hover:text-green-900"
-                                                        title="Aktifkan"
-                                                    >
-                                                        <PencilIcon className="w-5 h-5" />
-                                                    </button>
-                                                )}
+                                                <button
+                                                    onClick={() => handleEdit(assignment)}
+                                                    className="text-blue-600 hover:text-blue-900"
+                                                    title="Edit"
+                                                >
+                                                    <PencilIcon className="w-5 h-5" />
+                                                </button>
                                                 <button
                                                     onClick={() => handleDelete(assignment.id || assignment._id)}
                                                     className="text-red-600 hover:text-red-900"
@@ -467,6 +494,155 @@ const AssignMuridGuru = () => {
                             )}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {/* Buat Edit */}
+            {showEditModal && (
+                <div className="fixed inset-0 bg-gray-200/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="p-6">
+                            <h2 className="text-2xl font-bold mb-6">Edit Assignment</h2>
+                            
+                            <form onSubmit={handleSubmitEdit(onSubmitEdit)} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Pilih Guru *
+                                    </label>
+                                    <select
+                                        {...registerEdit("teacherId")}
+                                        className={`w-full px-3 py-2 border ${errorsEdit.teacherId ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                                    >
+                                        <option value="">-- Pilih Guru --</option>
+                                        {activeTeachers.map(teacher => (
+                                            <option key={teacher.id || teacher._id} value={teacher.id || teacher._id}>
+                                                {teacher.name} - {teacher.email}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errorsEdit.teacherId && <p className="text-red-500 text-sm mt-1">{errorsEdit.teacherId.message}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Pilih Murid *
+                                    </label>
+                                    <select
+                                        {...registerEdit("studentId")}
+                                        className={`w-full px-3 py-2 border ${errorsEdit.studentId ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                                    >
+                                        <option value="">-- Pilih Murid --</option>
+                                        {activeStudents.map(student => (
+                                            <option key={student.id || student._id} value={student.id || student._id}>
+                                                {student.name} - {student.email}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errorsEdit.studentId && <p className="text-red-500 text-sm mt-1">{errorsEdit.studentId.message}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Tanggal Mulai
+                                    </label>
+                                    <input
+                                        type="date"
+                                        {...registerEdit("startDate")}
+                                        className={`w-full px-3 py-2 border ${errorsEdit.startDate ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                                    />
+                                    {errorsEdit.startDate && <p className="text-red-500 text-sm mt-1">{errorsEdit.startDate.message}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Hari Les
+                                    </label>
+                                    <select
+                                        {...registerEdit("scheduleDay")}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                        <option value="">-- Pilih Hari --</option>
+                                        <option value="Senin">Senin</option>
+                                        <option value="Selasa">Selasa</option>
+                                        <option value="Rabu">Rabu</option>
+                                        <option value="Kamis">Kamis</option>
+                                        <option value="Jumat">Jumat</option>
+                                        <option value="Sabtu">Sabtu</option>
+                                    </select>
+                                </div>
+
+                                <div className='grid grid-cols-2 gap-4'>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Jam Mulai
+                                        </label>
+                                        <input
+                                            type="time"
+                                            {...registerEdit("startTime")}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Jam Selesai
+                                        </label>
+                                        <input
+                                            type="time"
+                                            {...registerEdit("endTime")}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className='block text-sm font-medium text-gray-700 mb-2'>Instrumen *</label>
+                                    <select 
+                                        {...registerEdit("instrument")}
+                                        className={`w-full px-3 py-2 border ${errorsEdit.instrument ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}>
+                                        <option value="">-- Pilih Instrumen --</option>
+                                        <option value="piano">Piano</option>
+                                        <option value="gitar">Gitar</option>
+                                        <option value="drum">Drum</option>
+                                        <option value="vocal">Vocal</option>
+                                        <option value="other">Lainnya</option>
+                                    </select>
+                                    {errorsEdit.instrument && <p className="text-red-500 text-sm mt-1">{errorsEdit.instrument.message}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Catatan
+                                    </label>
+                                    <textarea
+                                        {...registerEdit("notes")}
+                                        rows={4}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="Tambahkan catatan (opsional)"
+                                    />
+                                </div>
+
+                                <div className="flex gap-3 justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowEditModal(false);
+                                            resetEdit();
+                                            setEditingAssignment(null);
+                                        }}
+                                        className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium rounded-lg transition-colors"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                                    >
+                                        Update Assignment
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

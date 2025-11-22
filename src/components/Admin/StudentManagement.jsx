@@ -5,7 +5,8 @@ import StudentForm from './StudentForm';
 import { 
     PlusIcon, 
     MagnifyingGlassIcon,
-    FunnelIcon 
+    FunnelIcon, 
+    LockClosedIcon
 } from '@heroicons/react/24/outline';
 import Swal from 'sweetalert2';
 import api from '../../js/services/api';
@@ -18,6 +19,8 @@ import {
     removeStudent,
     fetchStudents
 } from '../../redux/slices/studentSlice';
+import { DataGrid } from '@mui/x-data-grid';
+import { PencilIcon, TrashIcon } from 'lucide-react';
 
 const StudentManagement = () => {
     const dispatch = useDispatch();
@@ -140,14 +143,11 @@ const StudentManagement = () => {
                 setEditingStudent(null);
                 setSelectedId(null);
             } else {
-                // --- LOGIKA ADD ---
                 const response = await api.post('/api/admin/students', studentData);
 
                 if (response.data.student) {
                     const newStudent = response.data.student;
-                    
-                    // PERBAIKAN: Saat add ke Redux, pastikan KEDUA ID ada
-                    // (Backend mengembalikan '_id', kita tambahkan 'id')
+
                     dispatch(addStudent({
                         ...newStudent,
                         id: newStudent._id 
@@ -188,6 +188,76 @@ const StudentManagement = () => {
         return matchesSearch;
     });
 
+    const rows = searchStudents.map((student) => ({
+        id: student.id,
+        name: student.name,
+        photo: student.photo,
+        phoneNumber: student.phone_number,
+        email : student.email,
+        status: student.status
+    }));
+
+    const columns = [
+        { field: 'photo', headerName: "", width: 100, renderCell: (params) => (
+            
+            <img
+                src={params.row.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(params.row.name)}&background=3b82f6&color=fff&size=200`}
+                alt={params.row.name}
+                className="w-10 h-10 rounded-full object-cover my-2"
+            />
+        )},
+        { field: 'name', headerName: 'Name', width: 200 },
+        { field: 'email', headerName: "Email", width: 300 },
+        { field: 'phoneNumber', headerName: "Phone Number", width: 150 },
+        { field: 'action', headerName: "Action", width: 200, renderCell: (params) => {
+            const teacher = filteredStudents.find(t => t.id === params.row.id);
+            return (
+                <>
+                    <button
+                        onClick={() => handleEditStudent(teacher)}
+                        className="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm mx-1 font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                        >
+                        <PencilIcon className="w-4 h-4 mr-1" />
+                        Edit
+                    </button>
+                        <button
+                        onClick={() => handleDeleteStudent(teacher.id)}
+                        className="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm mx-1 font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                    >
+                        <TrashIcon className="w-4 h-4 mr-1" />
+                        Hapus
+                    </button>
+                </>
+            );
+        }},
+        { field: '', headerName: "", width: 100, renderCell: (params) => {
+            const teacher = filteredStudents.find(t => t.id === params.row.id);
+            return (
+                <button
+                    onClick={() => handleToggleStatus(teacher)}
+                    className={`flex-1 inline-flex items-center justify-center px-3 py-2 text-sm mx-1 font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors ${
+                        teacher.status === 'active'
+                            ? 'text-orange-700 bg-orange-50 hover:bg-orange-100' : 'text-green-700 bg-green-50 hover:bg-green-100'
+                    }`}
+                >
+                    <LockClosedIcon className="w-4 h-4 mr-1" />
+                    {teacher.status === 'active' ? 'Block' : 'Active'}
+                </button>
+            );
+        }},
+        { field: 'status', headerName: "Status", width: 150, renderCell: (params) => {
+            return (
+                <div className={`px-3 py-1 mt-4 rounded-full items-center flex flex-col justify-center text-xs font-medium ${
+                    params.row.status === 'active' 
+                        ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                    {params.row.status === 'active' ? 'Aktif' : 'Tidak Aktif'}
+                </div>
+            )
+
+        }},
+    ];
+
 
     if (showForm) {
         return (
@@ -204,8 +274,11 @@ const StudentManagement = () => {
     }
 
     return (
-        <div className="p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div className="max-h-screen bg-gray-50 p-6 font-sans">
+            <title>Murid | Wisma Musik Rapsodi</title>
+            <div className="overflow-x-auto">
+
+            {/* <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Manajemen Murid</h1>
                     <p className="text-gray-600 mt-1">Kelola data murid Wisma Musik Rhapsodi</p>
@@ -243,20 +316,53 @@ const StudentManagement = () => {
                     </div>
                     <div className="text-sm text-gray-600">Murid Aktif</div>
                 </div>
-            </div>
+            </div> */}
 
             {loading ? (
                 <div className="flex justify-center items-center py-12">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
                 </div>
             ) : (
-                <StudentList
-                    students={searchStudents}
-                    onEdit={handleEditStudent}
-                    onDelete={handleDeleteStudent}
-                    onToggleStatus={handleToggleStatus}
-                />
+                <>
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-4">Daftar Murid</h1>
+                    </div>
+                    <div class="mx-auto">
+                        <main class="bg-white p-6 rounded-lg shadow-sm">
+                            <div class="flex justify-between items-center mb-5">
+                                <div class="flex items-center gap-4">
+                                    <div className="flex-1 relative">
+                                        <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Cari nama atau email murid..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <button onClick={handleAddStudent} class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        Add new
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto ">
+                                <DataGrid rows={rows} columns={columns} />
+                            </div>
+                        </main>
+                    </div>
+                </>
+                // <StudentList
+                //     students={searchStudents}
+                //     onEdit={handleEditStudent}
+                //     onDelete={handleDeleteStudent}
+                //     onToggleStatus={handleToggleStatus}
+                // />
             )}
+            </div>
         </div>
     );
 };

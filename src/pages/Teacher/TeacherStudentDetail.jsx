@@ -1,7 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import api from '../../js/services/api';
 import Swal from 'sweetalert2';
+import { 
+    fetchAttendanceHistory, 
+    createAttendance, 
+    selectAllAttendances, 
+    selectAttendanceStatus 
+} from '../../redux/slices/attendanceSlice';
+import { 
+    fetchTeacherAssignments, 
+    selectAllAssignments 
+} from '../../redux/slices/assignmentSlice';
+import {
+    fetchStudentModules,
+    createModule,
+    deleteModule,
+    selectAllModules,
+    selectModulesStatus
+} from '../../redux/slices/moduleSlice';
 import { 
     ArrowLeftIcon, 
     UserCircleIcon,
@@ -19,18 +37,24 @@ import {
 } from '@heroicons/react/24/outline';
 
 const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
-    const { studentId: paramStudentId } = useParams();
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     
-    const studentId = propStudentId || paramStudentId;
+    const studentId = propStudentId;
+    
+    const attendanceHistory = useSelector(selectAllAttendances);
+    const attendanceStatus = useSelector(selectAttendanceStatus);
+    
+    const modules = useSelector(selectAllModules);
+    const modulesStatus = useSelector(selectModulesStatus);
+    
+    const assignments = useSelector(selectAllAssignments);
     
     const [studentData, setStudentData] = useState(null);
-    const [attendanceHistory, setAttendanceHistory] = useState([]);
-    const [modules, setModules] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [uploadingModule, setUploadingModule] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [showModuleForm, setShowModuleForm] = useState(false);
-    
     const [formData, setFormData] = useState({
         date: new Date().toISOString().split('T')[0],
         startTime: '',
@@ -45,102 +69,81 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
         title: '',
         description: '',
         category: '',
-        type: 'link',
-        link: '',
-        file: null
+        type: 'file',
+        file: null,
+        video: null
     });
 
     useEffect(() => {
-        fetchStudentData();
-        fetchAttendanceHistory();
-        fetchModules();
-    }, [studentId]);
+        if (studentId) {
+            // dispatch(fetchTeacherAssignments());
+            dispatch(fetchAttendanceHistory(studentId));
+            dispatch(fetchStudentModules(studentId));
+        }
+    }, [studentId, dispatch]);
 
-    const fetchStudentData = async () => {
-        try {
-            setLoading(true);
-            const response = await api.get(`/api/teacher/my-students`);
+    useEffect(() => {
+        if (assignments.length > 0 && studentId) {
+            const studentAssignment = assignments.find(
+                a => (a.student?._id === studentId || a.student?.id === studentId)
+            );
             
-            if (response.data.success) {
-                const assignments = response.data.data;
-                const studentAssignment = assignments.find(
-                    a => a.student._id === studentId || a.student.id === studentId
-                );
-                
-                if (studentAssignment) {
-                    setStudentData(studentAssignment);
+            if (studentAssignment) {
+                setStudentData(studentAssignment);
+                setLoading(false);
+            } else {
+                setLoading(false);
+                Swal.fire('Error', 'Murid tidak ditemukan', 'error');
+                if (onBackClick) {
+                    onBackClick();
                 } else {
-                    Swal.fire('Error', 'Murid tidak ditemukan', 'error');
                     navigate('/teacher/students');
                 }
             }
-        } catch (error) {
-            console.error('Error fetching student data:', error);
-            Swal.fire('Error', 'Gagal memuat data murid', 'error');
-        } finally {
-            setLoading(false);
         }
-    };
-
-    const fetchAttendanceHistory = async () => {
-        try {
-            const response = await api.get(`/api/teacher/student/${studentId}/attendances`);
-            if (response.data.success) {
-                setAttendanceHistory(response.data.data);
-            }
-        } catch (error) {
-            console.error('Error fetching attendance history:', error);
-        }
-    };
-
-    const fetchModules = async () => {
-        try {
-            const response = await api.get(`/api/modules/student/${studentId}`);
-            if (response.data) {
-                setModules(response.data);
-            }
-        } catch (error) {
-            console.error('Error fetching modules:', error);
-        }
-    };
+    }, [assignments, studentId]);
 
     const handleSubmitModule = async (e) => {
         e.preventDefault();
         
+        if (uploadingModule) return; 
+        
         try {
+            setUploadingModule(true);
+            
             const formData = new FormData();
             formData.append('title', moduleFormData.title);
             formData.append('description', moduleFormData.description);
-            formData.append('category', moduleFormData.category);
             formData.append('type', moduleFormData.type);
-            formData.append('studentId', studentId);
-            
-            if (moduleFormData.type === 'file' && moduleFormData.file) {
+            formData.append('student', studentId); 
+
+            if(moduleFormData.type === 'file') {
                 formData.append('file', moduleFormData.file);
             } else {
-                formData.append('link', moduleFormData.link);
+                formData.append('file', moduleFormData.video); 
             }
 
-            const response = await api.post(`/api/modules/teacher/create`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            const resultAction = await dispatch(createModule(formData));
 
-            if (response.data) {
+            if (createModule.fulfilled.match(resultAction)) {
                 Swal.fire('Sukses', 'Modul berhasil ditambahkan', 'success');
                 setShowModuleForm(false);
                 setModuleFormData({
                     title: '',
                     description: '',
                     category: '',
-                    type: 'link',
-                    link: '',
-                    file: null
+                    type: 'file',
+                    file: null,
+                    video: null
                 });
-                fetchModules();
+            } else {
+                Swal.fire('Error', resultAction.payload || 'Gagal menambahkan modul', 'error');
             }
         } catch (error) {
             console.error('Error submitting module:', error);
-            Swal.fire('Error', error.response?.data?.message || 'Gagal menambahkan modul', 'error');
+            Swal.fire('Error', 'Gagal menambahkan modul', 'error');
+        } finally {
+            setUploadingModule(false);
         }
     };
 
@@ -158,9 +161,13 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
 
         if (result.isConfirmed) {
             try {
-                await api.delete(`/api/modules/${moduleId}`);
-                Swal.fire('Terhapus!', 'Modul berhasil dihapus', 'success');
-                fetchModules();
+                const resultAction = await dispatch(deleteModule(moduleId));
+                
+                if (deleteModule.fulfilled.match(resultAction)) {
+                    Swal.fire('Terhapus!', 'Modul berhasil dihapus', 'success');
+                } else {
+                    Swal.fire('Error', resultAction.payload || 'Gagal menghapus modul', 'error');
+                }
             } catch (error) {
                 console.error('Error deleting module:', error);
                 Swal.fire('Error', 'Gagal menghapus modul', 'error');
@@ -174,8 +181,6 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
                 return <DocumentIcon className="w-5 h-5 text-blue-500" />;
             case 'video':
                 return <VideoCameraIcon className="w-5 h-5 text-red-500" />;
-            case 'link':
-                return <LinkIcon className="w-5 h-5 text-green-500" />;
             default:
                 return <FolderIcon className="w-5 h-5 text-gray-500" />;
         }
@@ -190,9 +195,9 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
                 ...formData
             };
             
-            const response = await api.post(`/api/teacher/attendance/create`, payload);
+            const resultAction = await dispatch(createAttendance(payload));
             
-            if (response.data.success) {
+            if (createAttendance.fulfilled.match(resultAction)) {
                 Swal.fire('Sukses', 'Laporan pertemuan berhasil disimpan', 'success');
                 setShowForm(false);
                 setFormData({
@@ -204,11 +209,12 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
                     notes: '',
                     homework: ''
                 });
-                fetchAttendanceHistory();
+            } else {
+                Swal.fire('Error', resultAction.payload || 'Gagal menyimpan laporan', 'error');
             }
         } catch (error) {
             console.error('Error submitting attendance:', error);
-            Swal.fire('Error', error.response?.data?.message || 'Gagal menyimpan laporan', 'error');
+            Swal.fire('Error', 'Gagal menyimpan laporan', 'error');
         }
     };
 
@@ -260,6 +266,7 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
 
     return (
         <div className="px-6 max-w-7xl mx-auto">
+            <title>Detail Siswa | Wisma Musik Rapsodi</title>
             <div className="mb-6">
                 <button
                     onClick={() => onBackClick ? onBackClick() : navigate(-1)}
@@ -282,7 +289,11 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
 
             <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
                 <div className="flex items-start gap-6">
-                    <UserCircleIcon className="w-24 h-24 text-gray-300" />
+                    {student.photo ? (
+                        <img src={student.photo} alt={student.name} className="w-14 h-14 rounded-full object-cover" />
+                    ) : (
+                        <UserCircleIcon className="w-14 h-14 text-slate-300" />
+                    )}
                     <div className="flex-1">
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">{student.name}</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -370,20 +381,6 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
                                 placeholder="Penjelasan singkat tentang modul..."
                             />
                         </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Kategori
-                            </label>
-                            <input
-                                type="text"
-                                value={moduleFormData.category}
-                                onChange={(e) => setModuleFormData({ ...moduleFormData, category: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                                placeholder="Contoh: Piano Grade 1, Teori Musik"
-                            />
-                        </div>
-
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Tipe Modul <span className="text-red-500">*</span>
@@ -394,7 +391,6 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                                 required
                             >
-                                <option value="link">Link</option>
                                 <option value="file">File</option>
                                 <option value="video">Video</option>
                             </select>
@@ -403,42 +399,132 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
                         {moduleFormData.type === 'file' ? (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Upload File <span className="text-red-500">*</span>
+                                    File Unggahan <span className="text-red-500">*</span>
                                 </label>
-                                <input
-                                    type="file"
-                                    onChange={(e) => setModuleFormData({ ...moduleFormData, file: e.target.files[0] })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                                    required
-                                />
+                                <div
+                                    className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer"
+                                    onClick={() => document.getElementById('file-upload').click()}
+                                >
+                                    <div className="space-y-1 text-center">
+                                        <svg
+                                            className="mx-auto h-12 w-12 text-gray-400"
+                                            stroke="currentColor"
+                                            fill="none"
+                                            viewBox="0 0 48 48"
+                                            aria-hidden="true"
+                                        >
+                                            <path
+                                                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8"
+                                                strokeWidth={2}
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
+                                        </svg>
+                                        {moduleFormData.file ? (
+                                            <p className="text-sm text-gray-900">File Selected : <p className='text-red-500'>{ moduleFormData.file.name}</p></p>
+                                        ) : (
+                                            <>
+                                                <div className="flex text-sm text-gray-600">
+                                                    <label
+                                                        htmlFor="video-upload"
+                                                        className="relative cursor-pointer bg-white rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-green-500"
+                                                        >
+                                                        <span>Silahkan upload File</span>
+                                                    </label>
+                                                    <p className="pl-1">atau seret dan lepas</p>
+                                                </div>
+                                                <p className="text-xs text-gray-500">DOCX, PDF, PPTX hingga 20MB</p>
+                                            </>
+                                    )   }
+                                    </div>
+                                    <input
+                                        id='file-upload'
+                                        type="file"
+                                        accept='application/pdf, application/msword'
+                                        className="sr-only"
+                                        onChange={(e) => {
+                                            if (e.target.files && e.target.files.length > 0) {
+                                                setModuleFormData({ ...moduleFormData, file: e.target.files[0] });
+                                            }
+                                        }}
+                                    />
+                                </div>
                             </div>
                         ) : (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Link URL <span className="text-red-500">*</span>
+                                    Video Unggahan <span className="text-red-500">*</span>
                                 </label>
-                                <input
-                                    type="url"
-                                    value={moduleFormData.link}
-                                    onChange={(e) => setModuleFormData({ ...moduleFormData, link: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                                    placeholder="https://..."
-                                    required
-                                />
+                                <div
+                                    className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer"
+                                    onClick={() => document.getElementById('video-upload').click()}
+                                >
+                                    <div className="space-y-1 text-center">
+                                        <svg
+                                            className="mx-auto h-12 w-12 text-gray-400"
+                                            stroke="currentColor"
+                                            fill="none"
+                                            viewBox="0 0 48 48"
+                                            aria-hidden="true"
+                                        >
+                                            <path
+                                                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8"
+                                                strokeWidth={2}
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
+                                        </svg>
+                                        <div className="flex text-sm text-gray-600">
+                                            <label
+                                                htmlFor="video-upload"
+                                                className="relative cursor-pointer bg-white rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-green-500"
+                                            >
+                                                <span>Silahkan upload video</span>
+                                            </label>
+                                            <p className="pl-1">atau seret dan lepas</p>
+                                        </div>
+                                        <p className="text-xs text-gray-500">MP4, MOV, AVI, WMV hingga 100MB</p>
+                                    </div>
+                                    <input
+                                        id="video-upload"
+                                        name="video-upload"
+                                        type="file"
+                                        className="sr-only"
+                                        accept="video/*"
+                                        onChange={(e) => {
+                                            if (e.target.files && e.target.files.length > 0) {
+                                                console.log(e.target.files[0])
+                                                setModuleFormData({ ...moduleFormData, video: e.target.files[0] });
+                                            }
+                                        }}
+                                    />
+                                </div>
                             </div>
                         )}
 
                         <div className="flex gap-3">
                             <button
                                 type="submit"
-                                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                                disabled={uploadingModule}
+                                className={`px-6 py-2 ${uploadingModule ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white font-medium rounded-lg transition-colors inline-flex items-center`}
                             >
-                                Simpan Modul
+                                {uploadingModule ? (
+                                    <>
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Mengupload...
+                                    </>
+                                ) : (
+                                    'Simpan Modul'
+                                )}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setShowModuleForm(false)}
-                                className="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium rounded-lg transition-colors"
+                                disabled={uploadingModule}
+                                className={`px-6 py-2 ${uploadingModule ? 'bg-gray-200 cursor-not-allowed' : 'bg-gray-300 hover:bg-gray-400'} text-gray-700 font-medium rounded-lg transition-colors`}
                             >
                                 Batal
                             </button>
@@ -567,7 +653,6 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
                 </div>
             )}
 
-            {/* Modul Belajar */}
             <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <FolderIcon className="w-6 h-6 text-green-600" />
@@ -580,51 +665,51 @@ const TeacherStudentDetail = ({ studentId: propStudentId, onBackClick }) => {
                         <p>Belum ada modul untuk murid ini</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {modules.map((module) => (
-                            <div
-                                key={module._id}
-                                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                            >
-                                <div className="flex items-start justify-between mb-2">
-                                    <div className="flex items-center gap-2">
-                                        {getModuleIcon(module.type)}
-                                        <h4 className="font-semibold text-gray-900">{module.title}</h4>
-                                    </div>
-                                    <button
-                                        onClick={() => handleDeleteModule(module._id)}
-                                        className="text-red-500 hover:text-red-700"
-                                    >
-                                        <TrashIcon className="w-5 h-5" />
-                                    </button>
-                                </div>
-                                
-                                {module.description && (
-                                    <p className="text-sm text-gray-600 mb-2">{module.description}</p>
-                                )}
-                                
-                                {module.category && (
-                                    <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full mb-2">
-                                        {module.category}
-                                    </span>
-                                )}
-                                
-                                <div className="mt-3">
-                                    <a
-                                        href={module.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sm text-blue-600 hover:text-blue-800 underline"
-                                    >
-                                        {module.type === 'file' ? 'Download File' : 'Buka Link'}
-                                    </a>
-                                </div>
-                                
-                                <p className="text-xs text-gray-400 mt-2">
-                                    Ditambahkan: {new Date(module.createdAt).toLocaleDateString('id-ID')}
-                                </p>
+                    <div className="gap-4">
+                        {modules.length === 0 ? (
+                            <div className="col-span-1 md:col-span-2 text-center py-10">
+                                <p className="text-gray-600">Belum ada modul untuk murid ini</p>
                             </div>
-                        ))}
+                        ) : (
+                            modules.map((module) => (
+                                <div
+                                    key={module._id}
+                                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                                >
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            {getModuleIcon(module.type)}
+                                            <h4 className="font-semibold text-gray-900">{module.title}</h4>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeleteModule(module._id)}
+                                            className="text-red-500 hover:text-red-700"
+                                        >
+                                            <TrashIcon className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                    
+                                    {module.description && (
+                                        <p className="text-sm text-gray-600 mb-2">{module.description}</p>
+                                    )}
+                                    
+                                    <div className="mt-3">
+                                        <a
+                                            href={module.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-sm text-blue-600 hover:text-blue-800 underline"
+                                        >
+                                            {module.type === 'file' ? 'Open File' : 'Buka Link'}
+                                        </a>
+                                    </div>
+                                    
+                                    <p className="text-xs text-gray-400 mt-2">
+                                        Ditambahkan: {new Date(module.createdAt).toLocaleDateString('id-ID')}
+                                    </p>
+                                </div>
+                            ))
+                        )}
                     </div>
                 )}
             </div>

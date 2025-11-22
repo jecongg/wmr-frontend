@@ -98,7 +98,7 @@ const StudentReschedule = () => {
         setIsSubmitting(true);
         try {
             await api.post("/api/reschedule/student/create", {
-                assignmentId, // Kirim assignmentId, bukan scheduleId
+                assignmentId, 
                 originalDate,
                 requestedDate,
                 requestedTime,
@@ -110,7 +110,7 @@ const StudentReschedule = () => {
                 "Permintaan ganti jadwal Anda telah berhasil dikirim.",
                 "success"
             );
-            dispatch(fetchStudentRequests()); // Refresh data riwayat
+            dispatch(fetchStudentRequests()); 
             resetForm();
         } catch (error) {
             const errorMessage =
@@ -141,7 +141,7 @@ const StudentReschedule = () => {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-            {/* Kolom Form Pengajuan */}
+            <title>Pergantian Jadwal | Wisma Musik Rapsodi</title>
             <div className="lg:col-span-2">
                 <form
                     onSubmit={handleSubmit}

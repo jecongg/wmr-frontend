@@ -2,9 +2,11 @@
 @plugin "flowbite-react/plugin/tailwindcss";
 @source "../.flowbite-react/class-list.json";
 
+
+
 body {
     font-family: 'Poppins', sans-serif;
-    background-color: #FDFBF5; /* Warna default dari brand-light */
+    background-color: #FFFFFF; /* Warna default dari brand-light */
 }
 
 /* Toast animations */

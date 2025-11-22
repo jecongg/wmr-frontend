@@ -25,7 +25,6 @@ const menus = [
         component: 'other', 
         submenu: [
             { name: 'Assign Murid ke Guru', path: '/admin/other/assign', icon: UserGroupIcon, component: 'assign' },
-            { name: 'Sub Menu 2', path: '/admin/other/submenu2', icon: MdWork, component: 'submenu2' },
         ]
     },
 ];
@@ -41,6 +40,8 @@ export default function AdminPage() {
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     const [activeComponent, setActiveComponent] = useState('dashboard');
+
+    
 
     useEffect(() => {
         if (user && user.role === 'admin') {
@@ -85,6 +86,8 @@ export default function AdminPage() {
                 return <TeacherManagement />;
             case 'students':
                 return <StudentManagement />;
+            case 'studentpayments': 
+                return <StudentPayment />;
             case 'assign':
                 return <AssignMuridGuru />;
             default:

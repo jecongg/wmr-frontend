@@ -48,16 +48,13 @@ const TeacherModules = () => {
 
     return (
         <div>
-            {/* Form Upload */}
             <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md mb-8">
                 <h2 className="text-xl font-bold mb-4">Unggah Modul Baru</h2>
-                {/* Tambahkan input untuk title, description, type (select), link/file */}
                  <button type="submit" disabled={loading} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg">
                     {loading ? 'Mengunggah...' : 'Unggah Modul'}
                 </button>
             </form>
 
-            {/* Daftar Modul */}
             <div>
                  <h2 className="text-xl font-bold mb-4">Daftar Modul Anda</h2>
                  {/* Map dan tampilkan 'modules' */}

@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 import { useFirebaseAuth } from '../../js/hooks/useFirebaseAuth';
 import { selectUser } from '../../redux/slices/authSlice';
-import { fetchAnnouncements, selectAllAnnouncements } from '../../redux/slices/announcementSlice';
+import { fetchAnnouncements, selectAllAnnouncements, selectAnnouncementsPagination } from '../../redux/slices/announcementSlice';
 import api from '../../js/services/api';
 import { useWebSocketEvent } from '../../js/hooks/useWebSocket';
 import { useToast } from '../../js/context/ToastContext';
@@ -26,47 +26,60 @@ import TeacherReschedule from './TeacherReschedule';
 import TeacherAnnouncements from './TeacherAnnouncements';
 import TeacherStudents from './TeacherStudents';
 import TeacherStudentDetail from './TeacherStudentDetail';
+import { MegaphoneIcon } from 'lucide-react';
+import { fetchScheduleforToday, selectScheduleStatus, selectTodaySchedule } from '../../redux/slices/attendanceSlice';
 
 
 const TeacherDashboardHome = ({onStudentClick }) => {
     const dispatch = useDispatch();
     const user = useSelector(selectUser);
     const announcements = useSelector(selectAllAnnouncements);
-    const [schedules, setSchedules] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const pagination = useSelector(selectAnnouncementsPagination);
+    const schedules = useSelector(selectTodaySchedule);
+    const scheduleStatus = useSelector(selectScheduleStatus);
+    const [currentPage, setCurrentPage] = useState(1);
     const { showToast } = useToast();
 
-    const fetchTodaySchedules = async () => {
-        try {
-            const today = new Date().toISOString().split('T')[0];
-            const response = await api.get(`/api/attendance/teacher/schedule?date=${today}`); 
-            setSchedules(response.data);
-        } catch (error) {
-            console.error("Gagal memuat jadwal hari ini:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // const fetchTodaySchedules = async () => {
+    //     try {
+    //         const today = new Date().toISOString().split('T')[0];
+    //         const response = await api.get(`/api/attendance/teacher/schedule?date=${today}`); 
+    //         setSchedules(response.data);
+    //     } catch (error) {
+    //         console.error("Gagal memuat jadwal hari ini:", error);
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
 
-    // Listen for new student assignment
     useWebSocketEvent('student-assigned', (data) => {
         showToast(data.message || 'Murid baru telah di-assign kepada Anda!', 'success');
-        fetchTodaySchedules(); // Refresh schedule
+        fetchTodaySchedules(); 
     });
 
-    // Listen for assignment updates
     useWebSocketEvent('assignment-updated', (data) => {
         showToast(data.message || 'Assignment telah diupdate', 'info');
-        fetchTodaySchedules(); // Refresh schedule
+        fetchTodaySchedules(); 
+    });
+
+    useWebSocketEvent('new-announcement', () => {
+        dispatch(fetchAnnouncements({ page: currentPage, limit: 5 }));
+    });
+    useWebSocketEvent('announcement-deleted', ({ id }) => {
+        dispatch(fetchAnnouncements({ page: currentPage, limit: 5 })); 
     });
 
     useEffect(() => {
-        dispatch(fetchAnnouncements());
-        fetchTodaySchedules();
+        dispatch(fetchAnnouncements({ page: currentPage, limit: 5 }));
+        dispatch(fetchScheduleforToday());
+        console.log("Fetching today's schedule");
+        console.log(schedules);
+    }, [dispatch, currentPage]);
 
-    }, [dispatch]);
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
+    };
 
-    const recentAnnouncements = announcements.slice(0, 2);
 
     const handleScheduleClick = (student) => {
         const studentId = student._id || student.id;
@@ -77,8 +90,20 @@ const TeacherDashboardHome = ({onStudentClick }) => {
         }
     };
 
+    const formatDate = (dateString) => {
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        return new Date(dateString).toLocaleDateString('id-ID', options);
+    };
+
     return (
         <>
+        <title>Dashboard | Wisma Musik Rapsodi</title>
             <div className='my-3 mb-6'>
                 <h2 className="text-4xl font-bold text-gray-800 mb-2">Dashboard</h2>
                 <h2 className="text-lg font-medium text-gray-800 mb-2">Welcome Back, {user.name}....</h2>
@@ -86,7 +111,7 @@ const TeacherDashboardHome = ({onStudentClick }) => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
                     <h2 className="text-2xl font-bold text-gray-800 mb-5">Jadwal Anda Hari Ini</h2>
-                    {loading ? <p>Memuat jadwal...</p> : (
+                    {scheduleStatus === 'loading' ? <p>Memuat jadwal...</p> : (
                         schedules.length > 0 ? (
                             <ul className="divide-y divide-gray-200">
                                 {schedules.map((schedule) => (
@@ -112,24 +137,53 @@ const TeacherDashboardHome = ({onStudentClick }) => {
                     )}
                 </div>
                 
-                <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-5">Pengumuman Terbaru</h2>
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center space-x-2">
+                            <MegaphoneIcon className="w-5 h-5 text-indigo-600" />
+                            <h3 className="text-lg font-semibold text-gray-900">Pengumuman</h3>
+                        </div>
+                    </div>
                     {announcements.length > 0 ? (
-                        <ul className="divide-y divide-gray-200 ">
+                        <ul className="divide-y divide-gray-200 space-y-3">
                             {announcements.map(ann => (
-                                <div key={ann._id} className="p-3 shadow-lg rounded-md">
-                                    <p className="font-medium text-gray-900 mb-2">{ann.content}</p>
-                                    <p className="text-xs text-gray-500">{new Date(ann.createdAt).toLocaleString("id-ID", {
-                                        timeZone: "Asia/Jakarta",
-                                        day: "2-digit",
-                                        month: "2-digit",
-                                        year: "numeric",
-                                    })}</p>
+                                <div key={ann._id} className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors">
+                                    <div className="flex-1">
+                                        <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                                            {ann.content}
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            {formatDate(ann.createdAt)}
+                                        </p>
+                                    </div>
                                 </div>
                             ))}
                         </ul>
                     ) : (
                         <p className="text-center text-gray-500 py-4">Tidak ada pengumuman baru.</p>
+                    )}
+                    
+                    {/* Pagination */}
+                    {pagination.totalPages > 1 && (
+                        <div className="flex justify-center items-center space-x-2 mt-4">
+                            <button
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className={`px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                            >
+                                ‹
+                            </button>
+                            <span className="text-sm text-gray-600">
+                                {pagination.currentPage} dari {pagination.totalPages}
+                            </span>
+                            <button
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={currentPage === pagination.totalPages}
+                                className={`px-3 py-1 rounded ${currentPage === pagination.totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                            >
+                                ›
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
@@ -185,6 +239,7 @@ export default function TeacherDashboard() {
     ];
 
     const showStudentDetail = (studentId) => {
+        // console.log(studentId);
         setSelectedStudentId(studentId);
         setActiveComponent('student-detail');
     };

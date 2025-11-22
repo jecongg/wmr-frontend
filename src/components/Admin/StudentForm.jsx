@@ -127,7 +127,11 @@ const StudentForm = ({ student, onSave, onPhotoUpdate, onCancel }) => {
             setLoading(true);
             const formData = new FormData();
             formData.append('photo', photoFile);
-            const response = await api.post(`/api/admin/students/${studentId}/upload-photo`, formData);
+            const response = await api.post(`/api/admin/students/${studentId}/upload-photo`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
             if(response.status === 200){
                 setFormData(prev => ({ ...prev, photo: response.data.photo }));
                 setPhotoPreview(response.data.photo);
@@ -138,7 +142,7 @@ const StudentForm = ({ student, onSave, onPhotoUpdate, onCancel }) => {
             }
             setLoading(false);
         }catch(error){
-            console.error('Error uploading photo:', error);
+            console.error('Error uploading photo:', error.message);
             setLoading(false);
         }
     }
@@ -155,7 +159,7 @@ const StudentForm = ({ student, onSave, onPhotoUpdate, onCancel }) => {
             await onSave(formData);
             
             if (photoFile && student) {
-                await uploadPhoto(student._id);
+                await uploadPhoto(student.id);
             }
         } catch (error) {
             console.error('Error saving student:', error);
