@@ -350,7 +350,7 @@ const StudentManagement = () => {
                             </div>
 
                             <div class="overflow-x-auto ">
-                                <DataGrid rows={rows} columns={columns} />
+                                <DataGrid rows={rows} columns={columns} getRowId={(row)=>row.email}/>
                             </div>
                         </main>
                     </div>

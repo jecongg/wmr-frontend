@@ -335,25 +335,25 @@ const Footer = () => (
                     <h4 className="text-white font-bold text-lg mb-4">Hubungi Kami</h4>
                     <ul className="space-y-3 text-sm">
                         <li className="flex items-start">
-                            <span className="font-semibold text-white mr-2">A:</span> 
-                            Jl. Melodi Indah No. 123, Jakarta Selatan, Indonesia
+                            <span className="font-semibold text-white mr-2">Alamat:</span> 
+                            Jl. Mayjen HR. Muhammad No.Square Blok A No.25A, Pradahkalikendal, Kec. Dukuhpakis, Surabaya, Jawa Timur 60226
                         </li>
                         <li className="flex items-center">
-                            <span className="font-semibold text-white mr-2">P:</span> 
-                            (021) 123-4567 (WA Available)
+                            <span className="font-semibold text-white mr-2">Phone:</span> 
+                            0811-3556-625
                         </li>
                         <li className="flex items-center">
-                            <span className="font-semibold text-white mr-2">E:</span> 
-                            hello@rhapsody.id
+                            <span className="font-semibold text-white mr-2">Email:</span> 
+                            wismamusikrhapsody@gmail.com
                         </li>
                         <li className="mt-4 text-gray-500">
-                            Buka: Senin - Sabtu (09.00 - 20.00)
+                            Open: Monday - Saturday (08.00 - 17.00)
                         </li>
                     </ul>
                 </div>
             </div>
             <div className="border-t border-gray-800 pt-8 text-center text-sm text-gray-500">
-                <p>&copy; {new Date().getFullYear()} Wisma Musik Rhapsody. Dibuat untuk tujuan pembelajaran.</p>
+                <p>&copy; {new Date().getFullYear()} Wisma Musik Rhapsody</p>
             </div>
         </div>
     </footer>
@@ -363,7 +363,7 @@ const Footer = () => (
 const LandingPage = () => {
   return (
     <div className="bg-white overflow-x-hidden">
-      <title>Wisma Musik Rapsodi</title>
+      <title>Wisma Musik Rhapsody</title>
       <Header />
       <main>
         <HeroSection />
