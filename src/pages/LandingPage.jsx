@@ -63,7 +63,7 @@ function Header() {
     <header className="bg-white/90 backdrop-blur-sm shadow-sm sticky top-0 z-50"> {/* Menambah backdrop blur agar modern */}
       <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
         <div className='flex items-center'>
-          <img src="logo" className='w-10 h-10 mr-3 items-center' alt="" />
+          <img src="../assets/logo.jpg" className='w-10 h-10 mr-3 items-center' alt="" />
           {/* <div className="text-2xl font-bold text-gray-800 font-poppins ">Wisma Musik <span className="text-indigo-600">Rhapsody</span></div> */}
         </div>
         <div className="hidden md:flex space-x-6 font-medium">
