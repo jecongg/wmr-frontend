@@ -15,7 +15,6 @@ const TeacherList = ({ teachers, onEdit, onDelete, onToggleStatus, onAdd }) => {
     if (teachers.length === 0) {
         return (
             <div className="text-center py-12">
-                <MusicalNoteIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada guru ditemukan</h3>
                 <p className="text-gray-600">Tambahkan guru baru atau coba ubah filter pencarian.</p>
             </div>
