@@ -11,6 +11,7 @@ import { selectAllTeachers } from '../../redux/slices/teacherSlice';
 import { selectAllStudents } from '../../redux/slices/studentSlice';
 import { addAnnouncement, deleteAnnouncement, fetchAnnouncements, selectAllAnnouncements, selectAnnouncementsPagination, selectAnnouncementsStatus } from '../../redux/slices/announcementSlice';
 import { useWebSocketEvent } from '../../js/hooks/useWebSocket';
+import Swal from 'sweetalert2';
 
 const Dashboard = ({ user }) => {
     const teachers = useSelector(selectAllTeachers);
@@ -59,8 +60,11 @@ const Dashboard = ({ user }) => {
                 setShowAddForm(false);
             }
         } catch (error) {
-            console.error('Error creating announcement:', error);
-            alert('Gagal membuat pengumuman. Silakan coba lagi.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: 'Gagal menambahkan pengumuman.',
+            });
         } finally {
             setSubmitting(false);
         }
@@ -108,10 +112,10 @@ const Dashboard = ({ user }) => {
             <div className="p-6">
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900">
-                        Selamat Datang, {user.displayName}!
+                        Dashboard
                     </h1>
                     <p className="text-gray-600 mt-2">
-                        Berikut adalah ringkasan aktivitas Wisma Musik Rhapsodi
+                        Selamat Datang, {user.name}!
                     </p>
                 </div>
 
@@ -135,30 +139,8 @@ const Dashboard = ({ user }) => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Aktivitas Terbaru */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-[600px]"> {/* Disamakan tingginya jika perlu */}
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Aktivitas Terbaru</h3>
-                        <div className="space-y-4">
-                            <div className="flex items-center space-x-3">
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <p className="text-sm text-gray-600">Guru baru "Sarah Johnson" telah didaftarkan</p>
-                            </div>
-                            <div className="flex items-center space-x-3">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                <p className="text-sm text-gray-600">5 murid baru mendaftar kelas piano</p>
-                            </div>
-                            <div className="flex items-center space-x-3">
-                                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                <p className="text-sm text-gray-600">Jadwal kelas biola telah diperbarui</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* BAGIAN PENGUMUMAN */}
-                    {/* 1. Tambahkan h-[600px] (atau nilai pixel yang diinginkan) */}
-                    {/* 2. Tambahkan flex flex-col */}
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-[600px] flex flex-col">
-                        <div className="flex justify-between items-center mb-4 shrink-0"> {/* shrink-0 agar header tidak mengecil */}
+                        <div className="flex justify-between items-center mb-4 shrink-0"> 
                             <div className="flex items-center space-x-2">
                                 <MegaphoneIcon className="w-5 h-5 text-indigo-600" />
                                 <h3 className="text-lg font-semibold text-gray-900">Pengumuman</h3>

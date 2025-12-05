@@ -278,46 +278,6 @@ const StudentManagement = () => {
             <title>Murid | Wisma Musik Rapsodi</title>
             <div className="overflow-x-auto">
 
-            {/* <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Manajemen Murid</h1>
-                    <p className="text-gray-600 mt-1">Kelola data murid Wisma Musik Rhapsodi</p>
-                </div>
-                <button
-                    onClick={handleAddStudent}
-                    className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
-                >
-                    <PlusIcon className="w-5 h-5 mr-2" />
-                    Tambah Murid
-                </button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="flex-1 relative">
-                    <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Cari nama atau email murid..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white p-4 rounded-lg border">
-                    <div className="text-2xl font-bold text-green-600">{filteredStudents.length}</div>
-                    <div className="text-sm text-gray-600">Total Murid</div>
-                </div>
-                <div className="bg-white p-4 rounded-lg border">
-                    <div className="text-2xl font-bold text-blue-600">
-                        {filteredStudents.filter(s => s.status === 'active').length}
-                    </div>
-                    <div className="text-sm text-gray-600">Murid Aktif</div>
-                </div>
-            </div> */}
-
             {loading ? (
                 <div className="flex justify-center items-center py-12">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
