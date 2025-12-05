@@ -3,7 +3,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import api from '../../js/services/api';
 
-// Impor Redux actions dan selectors
 import { 
     fetchAnnouncements, 
     addAnnouncement, 
@@ -11,6 +10,7 @@ import {
     selectAnnouncementsStatus, 
     deleteAnnouncement
 } from '../../redux/slices/announcementSlice';
+import Swal from 'sweetalert2';
 
 const TeacherAnnouncements = () => {
     const dispatch = useDispatch();
@@ -31,7 +31,11 @@ const TeacherAnnouncements = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!title.trim() || !content.trim()) {
-            alert('Judul dan konten tidak boleh kosong.');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Peringatan',
+                text: 'Judul dan konten pengumuman tidak boleh kosong.',
+            })
             return;
         }
         setIsLoading(true);
@@ -40,9 +44,17 @@ const TeacherAnnouncements = () => {
             dispatch(addAnnouncement(response.data.data));
             setTitle('');
             setContent('');
-            alert('Pengumuman berhasil dibuat!');
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: 'Pengumuman berhasil dibuat.',
+            });
         } catch (error) {
-            alert('Gagal membuat pengumuman: ' + (error.response?.data?.message || 'Error'));
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: 'Gagal membuat pengumuman: ' + (error.response?.data?.message || 'Error'),
+            })
         } finally {
             setIsLoading(false);
         }
@@ -51,15 +63,21 @@ const TeacherAnnouncements = () => {
     const handleDelete = async (id) => {
         if (!confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) return;
         try {
-            // await api.delete(`/api/announcements/${id}`);
             dispatch(deleteAnnouncement(id));
-            alert('Pengumuman berhasil dihapus.');
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: 'Pengumuman berhasil dihapus.',
+            });
         } catch (error) {
-            alert('Gagal menghapus: ' + (error.response?.data?.message || 'Error'));
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: 'Gagal menghapus pengumuman.',
+            })
         }
     };
 
-    // Filter untuk menampilkan hanya pengumuman yang dibuat oleh guru yang login
     const myAnnouncements = announcements.filter(ann => ann.createdBy?._id === user?._id);
 
     return (

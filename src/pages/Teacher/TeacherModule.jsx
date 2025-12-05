@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../js/services/api';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import Swal from 'sweetalert2';
 
 const TeacherModules = () => {
     const [modules, setModules] = useState([]);
@@ -37,10 +38,18 @@ const TeacherModules = () => {
             await api.post('/api/modules/teacher/create', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            alert('Modul berhasil diunggah!');
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: 'Modul berhasil diunggah.',
+            })
             fetchModules(); 
         } catch (error) {
-            alert('Gagal mengunggah modul.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: 'Terjadi kesalahan saat mengunggah modul.',
+            });
         } finally {
             setLoading(false);
         }

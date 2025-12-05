@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../js/services/api';
+import Swal from 'sweetalert2';
 
 const TeacherReschedule = () => {
     const [requests, setRequests] = useState([]);
@@ -22,10 +23,18 @@ const TeacherReschedule = () => {
     const handleResponse = async (requestId, status) => {
         try {
             await api.put(`/api/reschedule/teacher/respond/${requestId}`, { status });
-            alert(`Permintaan berhasil di-${status === 'approved' ? 'setujui' : 'tolak'}`);
-            fetchRequests(); // Refresh
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: `Permintaan telah ${status === 'approved' ? 'disetujui' : 'ditolak'}.`,
+            });
+            fetchRequests();
         } catch (error) {
-            alert('Gagal merespons.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: 'Terjadi kesalahan saat memproses permintaan.',
+            });
         }
     };
 
