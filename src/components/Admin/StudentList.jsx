@@ -13,7 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const StudentList = ({ students, onEdit, onDelete, onToggleStatus }) => {
-    if (students.length === 0) {
+    if (!students || students.length === 0) {
         return (
             <div className="text-center py-12">
                 <AcademicCapIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
